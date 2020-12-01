@@ -471,7 +471,7 @@ Visualization Manager:
       Marker Topic: /exploration_polygon_marker
       Name: Marker
       Namespaces:
-        {}
+        explore_points: true
       Queue Size: 100
       Value: true
     - Alpha: 0.699999988
@@ -507,7 +507,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 45.5101967
+      Distance: 38.4346619
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1

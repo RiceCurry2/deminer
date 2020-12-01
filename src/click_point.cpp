@@ -1,14 +1,33 @@
 /* Bondary definitions and working on some sounds - There will be pushed to this file through the weekend */
 #include <ros/ros.h>
 #include "geometry_msgs/PointStamped.h"
+#include "geometry_msgs/PolygonStamped.h"
+#include "geometry_msgs/PoseArray.h"
 #include <sstream>
 #include "std_msgs/String.h"
 #include <visualization_msgs/Marker.h>
 #include "sound_play/sound_play.h"
+#include <vector>
 
+/*********************************************************************************************
+ * @brief           Standard definitions
+ * @param _point    Namespace: geometry_msgs::PointStamped
+ * @param _poly     Namespace: geometry_msgs::PolygonStamped
+ *********************************************************************************************/
+geometry_msgs::PolygonStamped _poly;
+geometry_msgs::PointStamped _point;
 std::string path_to_sounds = "../catkin_ws/src/deminer/sounds/";
+int cb = 0;
+int z = 0; /* Not used ATM */ 
 
-int x=1;
+/*********************************************************************************************
+ * @brief Console function and debugging tools for ease of debugging
+ * LOG() must stay after completion of code
+ * 
+ *********************************************************************************************/
+void LOG(const char* message){
+    std::cout << message << std::endl;
+}
 
 
 /*********************************************************************************************
@@ -16,21 +35,64 @@ int x=1;
  * The '&' represents that the PointStamped publisher are passed by reference from the main.
  * This is done for the purpose of using the 'msg' nameclasses outside the main loop.
  *********************************************************************************************/
-void msgCallback(const geometry_msgs::PointStamped::ConstPtr& msg){
+void msgCallback(const geometry_msgs::PointStamped::ConstPtr& cpoint){
     /****** Print point no. 'x' to console ******/
-    std::cout<<"This was point "<<x<<".\n";
+    std::cout<<"This was point "<<z<<".\n";
 
-    /****** Defining the path to our sound files ******/
-    ROS_INFO("Clicked point is: \x1B[92m%f\033[0m, \x1B[94m%f\033[0m\n\n" , msg->point.x, msg->point.y);
+    /****** ROS_INFO the clicked point ******/
+    ROS_INFO("Clicked point is: \x1B[92m%f\033[0m, \x1B[94m%f\033[0m\n\n" , cpoint->point.x, cpoint->point.y);
 
     /****** Add 1 to 'x' to tell which point was marked ******/
-    x++; 
+    z++; 
 }
 
-/****** Console out function for ease of usage ******/
-void LOG(const char* message){
-    std::cout << message << std::endl;
+void pointClick(const geometry_msgs::PointStamped& cpoint){
+    float x_point = cpoint.point.x;
+    float y_point = cpoint.point.y;
+    
+    if (cb >= 4){
+    std::cout <<"5th point was added, deminer will start from (x,y): x:" << x_point << "," << "y:" << y_point << std::endl;
+    /* Here goes the function to send_goal */ 
+    cb = 0;
+    }
+        else if (cb <= 3){
+        std::cout << "Adding point to database:" << std::endl;
+        cb++;
+    }
+    
+    return;
 }
+
+/* Just a test lolz */
+void boundingBox(const geometry_msgs::PoseArrayConstPtr& msg)
+{
+const std::vector<geometry_msgs::Pose>& ps = msg->poses;
+visualization_msgs::Marker line_strip;
+line_strip.header.frame_id = "/whycon";
+
+line_strip.header.stamp = ros::Time::now();
+line_strip.ns = "lines";
+line_strip.pose.orientation.w = 1.0;
+line_strip.id = 0; //tag id
+line_strip.type = visualization_msgs::Marker::LINE_STRIP;  //tag type
+line_strip.scale.x = 0.05;
+line_strip.color.b = 1.0;
+line_strip.color.a = 1.0;
+
+geometry_msgs::Point p;
+p.x = ps[0].position.x;
+p.y = ps[0].position.y;
+p.z = ps[0].position.z;
+line_strip.points.push_back(p);
+};
+
+void polyReciever(){
+
+};
+
+void pathPlanner(){
+
+};
 
 /*********************************************************************************************
  * This is a function for the purpose of playing sound 
@@ -95,7 +157,11 @@ int main(int argc, char **argv){
 
     std::cout<<"\e[1mCOORDINATE FINDER\e[0m \nUsage: \n1:Click the 'publish a point' tool in rVIZ. \n2:Click within the map boundary \n3:Retrieve the coordinate in this terminal windows \n\n-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴"<<std::endl;
 
-    ros::Subscriber sub = n.subscribe("clicked_point", 1000, msgCallback);
+    ros::Subscriber sub = n.subscribe("clicked_point", 1000, pointClick);
+
+    ros::Publisher line_pub = n.advertise<visualization_msgs::Marker>("line_visualization_marker", 10);
+    
+    ros::Subscriber pose_sub = n.subscribe<geometry_msgs::PoseArray>("/whycon/poses", 10, &boundingBox);
 
     ros::spin();
 
