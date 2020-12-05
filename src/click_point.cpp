@@ -1,13 +1,25 @@
 /* Bondary definitions and working on some sounds - There will be pushed to this file through the weekend */
 #include <ros/ros.h>
+#include <ros/wall_timer.h>
+#include <costmap_2d/costmap_2d.h>
+#include <costmap_2d/costmap_2d_ros.h>
+#include <costmap_2d/footprint.h>
+#include <move_base_msgs/MoveBaseAction.h>
+#include <actionlib/client/simple_action_client.h>
+
 #include "geometry_msgs/PointStamped.h"
 #include "geometry_msgs/PolygonStamped.h"
 #include "geometry_msgs/PoseArray.h"
+
 #include <sstream>
-#include "std_msgs/String.h"
-#include <visualization_msgs/Marker.h>
-#include "sound_play/sound_play.h"
 #include <vector>
+#include "std_msgs/String.h"
+
+#include "sound_play/sound_play.h"
+
+#include <visualization_msgs/Marker.h>
+#include <boost/foreach.hpp>
+
 
 /*********************************************************************************************
  * @brief           Standard definitions
@@ -16,9 +28,14 @@
  *********************************************************************************************/
 geometry_msgs::PolygonStamped _poly;
 geometry_msgs::PointStamped _point;
+
+static ros::Publisher pointline_pub;
+
+typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
 std::string path_to_sounds = "../catkin_ws/src/deminer/sounds/";
 int cb = 0;
 int z = 0; /* Not used ATM */ 
+bool awaiting_center(false);
 
 /*********************************************************************************************
  * @brief Console function and debugging tools for ease of debugging
@@ -28,7 +45,6 @@ int z = 0; /* Not used ATM */
 void LOG(const char* message){
     std::cout << message << std::endl;
 }
-
 
 /*********************************************************************************************
  * msgCallback function for printing the clicked coordinate in terminal window
@@ -64,34 +80,10 @@ void pointClick(const geometry_msgs::PointStamped& cpoint){
 }
 
 /* Just a test lolz */
-void boundingBox(const geometry_msgs::PoseArrayConstPtr& msg)
-{
-const std::vector<geometry_msgs::Pose>& ps = msg->poses;
-visualization_msgs::Marker line_strip;
-line_strip.header.frame_id = "/whycon";
 
-line_strip.header.stamp = ros::Time::now();
-line_strip.ns = "lines";
-line_strip.pose.orientation.w = 1.0;
-line_strip.id = 0; //tag id
-line_strip.type = visualization_msgs::Marker::LINE_STRIP;  //tag type
-line_strip.scale.x = 0.05;
-line_strip.color.b = 1.0;
-line_strip.color.a = 1.0;
-
-geometry_msgs::Point p;
-p.x = ps[0].position.x;
-p.y = ps[0].position.y;
-p.z = ps[0].position.z;
-line_strip.points.push_back(p);
-};
-
-void polyReciever(){
-
-};
 
 void pathPlanner(){
-
+    return;
 };
 
 /*********************************************************************************************
@@ -99,7 +91,6 @@ void pathPlanner(){
  * The '&' represents that the sound client publisher are passed by reference from the main.
  * This is done for the purpose of using the 'sc.' nameclasses outside the main loop.
  *********************************************************************************************/
-
 void playSound(int a, sound_play::SoundClient& sc){
 
     /****** Defining the path to our sound files ******/
@@ -123,6 +114,28 @@ void playSound(int a, sound_play::SoundClient& sc){
 
     return;
 }
+
+        void boundingBox(const geometry_msgs::PoseArrayConstPtr& msg)
+        {
+        const std::vector<geometry_msgs::Pose>& ps = msg->poses;
+        visualization_msgs::Marker line_strip;
+        line_strip.header.frame_id = "/deminer";
+
+            line_strip.header.stamp = ros::Time::now();
+            line_strip.ns = "boundingBox";
+            line_strip.pose.orientation.w = 1.0;
+            line_strip.id = 0; //tag id
+            line_strip.type = visualization_msgs::Marker::LINE_STRIP;  //tag type
+            line_strip.scale.x = 0.05;
+            line_strip.color.b = 1.0;
+            line_strip.color.a = 1.0;
+
+            geometry_msgs::Point p;
+            p.x = ps[0].position.x;
+            p.y = ps[0].position.y;
+            p.z = ps[0].position.z;
+            line_strip.points.push_back(p);
+        }
 
 /*********************************************************************************************
  * The master main file
@@ -157,16 +170,23 @@ int main(int argc, char **argv){
 
     std::cout<<"\e[1mCOORDINATE FINDER\e[0m \nUsage: \n1:Click the 'publish a point' tool in rVIZ. \n2:Click within the map boundary \n3:Retrieve the coordinate in this terminal windows \n\n-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴-̴"<<std::endl;
 
-    ros::Subscriber sub = n.subscribe("clicked_point", 1000, pointClick);
+    _poly.header.frame_id = "map";
 
-    ros::Publisher line_pub = n.advertise<visualization_msgs::Marker>("line_visualization_marker", 10);
+    ros::Subscriber sub = n.subscribe("/clicked_point", 1000, &pointClick);
     
+    //pointline_pub = n.advertise<visualization_msgs::Marker>("demining_polygon_marker", 10, pointLines);
+    
+    //poly_sub = n.subscribe<geometry_msgs::PolygonStamped>("polygon_point", 10, polyReciever);
+
     ros::Subscriber pose_sub = n.subscribe<geometry_msgs::PoseArray>("/whycon/poses", 10, &boundingBox);
+
+    ROS_INFO("Please use the 'Point' tool in Rviz to select an exporation boundary.");
+
+    //ros::WallTimer wall_timer = n.createWallTimer(ros::WallDuration(0.1), &pointLines);
 
     ros::spin();
 
     return 0;
-
 }
 
 /* 

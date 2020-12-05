@@ -1,0 +1,3 @@
+  <launch>
+<node name= "vispose" type="vispose" pkg="deminer" output="screen" launch-prefix="gnome-terminal --command"/>
+  </launch>

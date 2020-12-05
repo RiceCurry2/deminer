@@ -8,6 +8,8 @@ add_compile_options(-std=c++11)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS 
+  costmap_2d
+  dynamic_reconfigure 
   roscpp
   visualization_msgs
   move_base_msgs
@@ -135,7 +137,9 @@ ${catkin_INCLUDE_DIRS})
 ## Declare a C++ executable
 add_executable(navigation_node src/nav.cpp)
 add_executable(click_point src/click_point.cpp)
-add_executable(line_list src/line_list.cpp)
+add_executable(boundary_selection src/boundary_selection.cpp)
+add_executable(xyclick src/click.cpp)
+add_executable(vispose src/vispose.cpp)
 
 
 ## Add cmake target dependencies of the executable
@@ -151,7 +155,15 @@ target_link_libraries(click_point
 ${catkin_LIBRARIES}
 )
 
-target_link_libraries(line_list
+target_link_libraries(boundary_selection
+${catkin_LIBRARIES}
+)
+
+target_link_libraries(xyclick
+${catkin_LIBRARIES}
+)
+
+target_link_libraries(vispose
 ${catkin_LIBRARIES}
 )
 
