@@ -1,6 +1,10 @@
 # deminer
 This package introduces a polygon selection tool into rVIZ, this tool creates a vector of goals which enforces to make the turtlebot follow a boustrophedon path in the search of landmines. 
 
+PROGRESS:
+2 dec. 2020 - https://youtu.be/NvEaoHpKGbo
+6 dec. 2020 - https://youtu.be/31A7WzORXv4
+
 TODO:
 * move_goal -> Actionclient and Actionserver.
 * A rough plan is in the works regarding this matter
@@ -14,16 +18,19 @@ Further implementation:
 * Add implementation of metal_detector
 
 
+
+
+
 This package is dependent on:
 
-        * Basic ros packages:
-        turtlebot2
-        gmapping
-        amcl
-        rviz
+    Basic ros packages:
+    turtlebot2
+    gmapping
+    amcl
+    rviz
 
-        * Other ros packages:
-        soundplay
+    Other ros packages:
+    soundplay
 
 
 
