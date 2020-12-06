@@ -4,12 +4,12 @@ This package introduces a polygon selection tool into rVIZ, this tool creates a 
 
 ## PROGRESS:
 
-### 2 dec. 2020
+### 2 dec. 2020 (Polygon selection)
 <a href="http://www.youtube.com/watch?feature=player_embedded&v=NvEaoHpKGbo
 " target="_blank"><img src="http://img.youtube.com/vi/NvEaoHpKGbo/0.jpg" 
 alt="ROS: Polygon selection" width="350" height="200" border="10" /></a>
 
-### 6 dec. 2020
+### 6 dec. 2020 (Goal definition)
 <a href="http://www.youtube.com/watch?feature=player_embedded&v=31A7WzORXv4
 " target="_blank"><img src="http://img.youtube.com/vi/31A7WzORXv4/0.jpg" 
 alt="ROS: Goal definition " width="350" height="200" border="10" /></a>
