@@ -2,14 +2,22 @@
 This package introduces a polygon selection tool into rVIZ, this tool creates a vector of goals which enforces to make the turtlebot follow a boustrophedon path in the search of landmines. 
 
 
-PROGRESS:
-* 2 dec. 2020 - https://youtu.be/NvEaoHpKGbo
+##PROGRESS:
 
-* 6 dec. 2020 - https://youtu.be/31A7WzORXv4
+###2 dec. 2020
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=NvEaoHpKGbo
+" target="_blank"><img src="http://img.youtube.com/vi/NvEaoHpKGbo/0.jpg" 
+alt="ROS: Polygon selection" width="240" height="180" border="10" /></a>
 
+###6 dec. 2020
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=31A7WzORXv4
+" target="_blank"><img src="http://img.youtube.com/vi/31A7WzORXv4/0.jpg" 
+alt="ROS: Goal definition " width="240" height="180" border="10" /></a>
 
-TODO:
+##TODO:
+
 * move_goal -> Actionclient and Actionserver.
+
 * A rough plan is in the works regarding this matter
 
 * Splitting the client up into client and server (currently resides as a client only).
