@@ -46,10 +46,13 @@ private:
     geometry_msgs::Point32 _as; //maybe not used
 
     ros::Publisher pointline_pub;
-    ros::Publisher boundingbox_pub;
+    ros::Publisher goal_m_pub;
+    ros::Publisher boundingbox_pub; //maybe not used
     ros::Subscriber pointclick_sub;
     ros::Subscriber amcl_pose_sub;
     ros::WallTimer pointline_timer;
+    ros::WallTimer goal_m_timer;
+
 
     std::string path_to_sounds = "../catkin_ws/src/deminer/sounds/";
 
@@ -67,9 +70,18 @@ private:
         };
 
     struct coor2d {
-        float x;
-        float y;
-        };
+        float x1;
+        float y1;
+        float x2;
+        float y2;
+
+        float distance_p1_p2()
+        {
+        std::cout << x1 << "  " << x2<< "  " << y1 << "  " << y2 << std::endl;
+        float result = sqrt(pow(x2 - x1, 2.0f) + pow(y2 - y1, 2.0f));
+        return result;
+        }
+    };
 
     struct minmax {
         float min_x; 
@@ -77,7 +89,8 @@ private:
         float max_x;
         float max_y;
 
-        void reset() {
+        void reset() 
+        {
         min_x = 0.0f; 
         min_y = 0.0f;
         max_x = 0.0f;
@@ -85,19 +98,27 @@ private:
         }
     };
 
+    struct goal {
+        float x; 
+        float y;
+    };
+
+
     std::vector<coor2d> vec;
+
+    std::vector<goal> goal_vec;
 
     //Maybe not used: std::vector<minmax> v_minmax;
 
     struct compare_xy {
         bool operator ()(const coor2d& left, const coor2d& right) const {
-        return (left.x < right.x) || ((left.x == right.x) && (left.y < right.y));
+        return (left.x1 < right.x1) || ((left.x1 == right.x1) && (left.y1 < right.y1));
     }
     };
 
     struct compare_yx {
         bool operator ()(const coor2d& left, const coor2d& right) const {
-        return (left.y < right.y) || ((left.y == right.y) && (left.x < right.x));
+        return (left.y1 < right.y1) || ((left.y1 == right.y1) && (left.x1 < right.x1));
     }
     };
 
@@ -200,12 +221,21 @@ private:
             // Creating new item "temp" in struct
             coor2d xy_temp;
             minmax mm_temp;
+            goal goal_temp;
 
+                for (int i=0; i<_poly.polygon.points.size(); i++) 
+            { 
+                 // console out vector at current state (pre-sort)
+                 std::cout << _poly.polygon.points.at(i).x << ", ";
+                 std::cout << _poly.polygon.points.at(i).y << std::endl;
+            }
+
+            std::cout << "-------------------------------------------------" << std::endl;
 
             for (int i = 0; i < _poly.polygon.points.size(); i++)
             {
-                xy_temp.x = _poly.polygon.points.at(i).x;
-                xy_temp.y = _poly.polygon.points.at(i).y;
+                xy_temp.x1 = _poly.polygon.points.at(i).x;
+                xy_temp.y1 = _poly.polygon.points.at(i).y;
 
                 vec.push_back(xy_temp);
 
@@ -220,92 +250,186 @@ private:
             for (int i=0; i<vec.size(); i++) 
             { 
                  // console out vector at current state (pre-sort)
-                 std::cout << vec.at(i).x << ", ";
-                 std::cout << vec.at(i).y << std::endl;
+                 std::cout << vec.at(i).x1 << ", ";
+                 std::cout << vec.at(i).y1 << std::endl;
             }
+                // std::cout << vec.at(0).x1 << vec.at(0).y1 << std::endl;
+                                
+                // std::cout << vec.at(1).x1 << vec.at(1).y1 << std::endl;
 
-            // Call sort funcion (sorting for lowest x pt)
-            // Thus..   vec.at(3) = highest X
-            //          vec.at(0) = lowest X
-            std::sort(vec.begin(), vec.end(), compare_xy());
-            std::cout << std::endl;
+                // std::cout << vec.at(2).x1 << vec.at(2).y1 << std::endl;
+                                
+                // std::cout << vec.at(3).x1 << vec.at(3).y1 << std::endl;
 
-                // Load max/min variables into vector via temp struct
-                mm_temp.min_x = vec.at(0).x;
-                mm_temp.max_x = vec.at(3).x;
+                xy_temp.x1 = vec.at(0).x1;
+                xy_temp.y1 = vec.at(0).y1;
+                xy_temp.x2 = vec.at(1).x1;
+                xy_temp.y2 = vec.at(1).y1;
+                float distance0_1 = xy_temp.distance_p1_p2();
+                int steps0_1 = std::round(distance0_1 / 0.30f);
 
-                //Maybe not used: v_minmax.push_back(mm_temp);
+                xy_temp.x1 = vec.at(2).x1;
+                xy_temp.y1 = vec.at(2).y1;
+                xy_temp.x2 = vec.at(3).x1;
+                xy_temp.y2 = vec.at(3).y1;
+                float distance2_3 = xy_temp.distance_p1_p2();
+                int steps2_3 = std::round(distance2_3 / 0.30f);
 
-            std::cout << " " << std::endl;
-            std::cout << "v_ " << std::endl;
+                std::cout << "Steps 1: " << steps0_1 << " " << std::endl;
+                std::cout << "Steps 2: " << steps2_3 << " " << std::endl;
 
-            std::cout << " " << std::endl;
-            std::cout << "Sorted vector points XY: " << std::endl;
-            
-            for (int i=0; i<vec.size(); i++) 
+                std::cout << "Distance 1: " << distance0_1 << " Distance 2: " << distance2_3 << std::endl;                
+                // // // float px = fabsf(mm_temp.min_x);
+                // // // float py = fabsf(mm_temp.min_y);
+                // // // std::cout << "Count to plus: " << px << ", " << py << std::endl;
+
+                // // // float sum = 0;
+
+                // // // sum = px + mm_temp.max_x;
+                // // // std::cout << "low + high: " << px << " + " << mm_temp.max_x << " = " << sum <<  std::endl;
+                // // // int cx = std::round(sum / 0.30f);
+                // // // std::cout << "x count: " << cx << std::endl;
+
+                // // // sum = py + mm_temp.max_y;
+                // // // std::cout << "low + high: " << py << " + " << mm_temp.max_y << " = " << sum <<  std::endl;
+                // // // int cy = std::round(sum / 0.30f);
+                // // // std::cout << "y count: " << cy << std::endl;
+
+                // The parametric equation for a line:
+                // x = x1 + t * dx
+                // y = y1 + t * dy 
+                // ------------------------------------------------------------------------------------------------------
+                            // Point2        // Point1 
+                double dx = (vec.at(1).x1) - (vec.at(0).x1);
+                double dy = (vec.at(1).y1) - (vec.at(0).y1);
+                double dist = sqrt(dx*dx + dy*dy);
+                dx /= dist;
+                dy /= dist;
+
+                for (int i = 0; i < steps0_1; i++)
+                {
+                goal_temp.x = vec.at(1).x1 + -robot_width*i * dx;
+                goal_temp.y = vec.at(1).y1 + -robot_width*i * dy;
+                
+                    goal_vec.push_back(goal_temp);
+                }
+
+                            // Point2        // Point1 
+                dx = (vec.at(3).x1) - (vec.at(2).x1);
+                dy = (vec.at(3).y1) - (vec.at(2).y1);
+                dist = sqrt(dx*dx + dy*dy);
+                dx /= dist;
+                dy /= dist;
+
+                for (int i = 0; i < steps2_3; i++)
+                {
+                goal_temp.x = vec.at(3).x1 + -robot_width*i * dx;
+                goal_temp.y = vec.at(3).y1 + -robot_width*i * dy;
+                
+                    goal_vec.push_back(goal_temp);                
+                }
+
+                for (int i=0; i<goal_vec.size(); i++) 
             { 
-                 // console out vector at current state (pro-sort)
-                 // 
-                 std::cout << vec.at(i).x << ",  ";
-                 std::cout << vec.at(i).y << std::endl;
+                 // console out vector at current state (pre-sort)
+                 std::cout << goal_vec.at(i).x << ", ";
+                 std::cout << goal_vec.at(i).y << std::endl;
+
             }
-
-            // Call sort funcion (sorting for lowest y pt)
-            // Thus..   vec.at(3) = highest Y
-            //          vec.at(0) = lowest Y
-            std::sort(vec.begin(), vec.end(), compare_yx());
-            std::cout << std::endl;
-
-                // Load max/min variables into vector via temp struct
-                mm_temp.min_y = vec.at(0).y;
-                mm_temp.max_y = vec.at(3).y;
-
-                //Maybe not used: v_minmax.push_back(mm_temp);
-
-
-            std::cout << "Sorted vector points YX: " << std::endl;
-            
-            for (int i=0; i<vec.size(); i++) 
-            { 
-                 // console out vector at current state (pro-sort)
-                 // 
-                 std::cout << vec.at(i).x << ",  ";
-                 std::cout << vec.at(i).y << std::endl;
-            }
-         
-                std::cout << " " << std::endl;
-                 // Print min singular points
-                std::cout << "min x: " << mm_temp.min_x << ",  ";
-                std::cout << "min y: " << mm_temp.min_y << std::endl;
-
-                 // Print max singular points
-                std::cout << "max x: " << mm_temp.max_x << ",  ";
-                std::cout << "max y: " << mm_temp.max_y << std::endl;
-
-                vec.clear();
-                ROS_INFO("Sorting vector has been cleared");
-
                 
 
-            //min x: -0.490582,  min y: -1.0317
-            //max x: 2.18035,  max y: 1.527
+                //std::cout << vec.at(1).x1 << " - " << vec.at(0).x1 << " = " << dx << std::endl;
+                //std::cout << vec.at(1).y1 << " - " << vec.at(0).y1 << " = " << dy << std::endl;
+                //std::cout << " " << std::endl;
+                //std::cout << "Performed calculations: " << std::endl;
 
-                float px = fabsf(mm_temp.min_x);
-                float py = fabsf(mm_temp.min_y);
-                std::cout << "Count to plus: " << px << ", " << py << std::endl;
+                //std::cout << xy_temp.x1 << ", " << xy_temp.y1 << std::endl;
 
-                float sum = 0;
 
-                sum = px + mm_temp.max_x;
-                std::cout << "low + high: " << px << " + " << mm_temp.max_x << " = " << sum <<  std::endl;
-                int cx = std::round(sum / 0.30f);
-                std::cout << "x count: " << cx << std::endl;
+            // Vector sorts for min/max
+            // --------------------------------------------------------------------------
+            // // // // Call sort funcion (sorting for lowest x pt)
+            // // // // Thus..   vec.at(3) = highest X
+            // // // //          vec.at(0) = lowest X
+            // // // std::sort(vec.begin(), vec.end(), compare_xy());
+            // // // std::cout << std::endl;
 
-                sum = py + mm_temp.max_y;
-                std::cout << "low + high: " << py << " + " << mm_temp.max_y << " = " << sum <<  std::endl;
-                int cy = std::round(sum / 0.30f);
-                std::cout << "y count: " << cy << std::endl;
+            // // //     // Load max/min variables into vector via temp struct
+            // // //     mm_temp.min_x = vec.at(0).x;
+            // // //     mm_temp.max_x = vec.at(3).x;
 
+            // // //     //Maybe not used: v_minmax.push_back(mm_temp);
+
+            // // // std::cout << " " << std::endl;
+            // // // std::cout << "v_ " << std::endl;
+
+            // // // std::cout << " " << std::endl;
+            // // // std::cout << "Sorted vector points XY: " << std::endl;
+            
+            // // // for (int i=0; i<vec.size(); i++) 
+            // // // { 
+            // // //      // console out vector at current state (pro-sort)
+            // // //      // 
+            // // //      std::cout << vec.at(i).x << ",  ";
+            // // //      std::cout << vec.at(i).y << std::endl;
+            // // // }
+
+            // // // // Call sort funcion (sorting for lowest y pt)
+            // // // // Thus..   vec.at(3) = highest Y
+            // // // //          vec.at(0) = lowest Y
+            // // // std::sort(vec.begin(), vec.end(), compare_yx());
+            // // // std::cout << std::endl;
+
+            // // //     // Load max/min variables into vector via temp struct
+            // // //     mm_temp.min_y = vec.at(0).y;
+            // // //     mm_temp.max_y = vec.at(3).y;
+
+            // // //     //Maybe not used: v_minmax.push_back(mm_temp);
+
+
+            // // // std::cout << "Sorted vector points YX: " << std::endl;
+            
+            // // // for (int i=0; i<vec.size(); i++) 
+            // // // { 
+            // // //      // console out vector at current state (pro-sort)
+            // // //      // 
+            // // //      std::cout << vec.at(i).x << ",  ";
+            // // //      std::cout << vec.at(i).y << std::endl;
+            // // // }
+         
+            // // //     std::cout << " " << std::endl;
+            // // //      // Print min singular points
+            // // //     std::cout << "min x: " << mm_temp.min_x << ",  ";
+            // // //     std::cout << "min y: " << mm_temp.min_y << std::endl;
+
+            // // //      // Print max singular points
+            // // //     std::cout << "max x: " << mm_temp.max_x << ",  ";
+            // // //     std::cout << "max y: " << mm_temp.max_y << std::endl;
+
+            // // //     //vec.clear();
+            // // //     //ROS_INFO("Sorting vector has been cleared");
+
+            // // //     //min x: -0.490582,  min y: -1.0317
+            // // //     //max x: 2.18035,  max y: 1.527
+
+                // MIN/MAX (Maybe not used)
+                //-------------------------------------------------------------------------------------------------------
+                // // float px = fabsf(mm_temp.min_x);
+                // // float py = fabsf(mm_temp.min_y);
+                // // std::cout << "Count to plus: " << px << ", " << py << std::endl;
+
+                // // float sum = 0;
+
+                // // sum = px + mm_temp.max_x;
+                // // std::cout << "low + high: " << px << " + " << mm_temp.max_x << " = " << sum <<  std::endl;
+                // // int cx = std::round(sum / 0.30f);
+                // // std::cout << "x count: " << cx << std::endl;
+
+                // // sum = py + mm_temp.max_y;
+                // // std::cout << "low + high: " << py << " + " << mm_temp.max_y << " = " << sum <<  std::endl;
+                // // int cy = std::round(sum / 0.30f);
+                // // std::cout << "y count: " << cy << std::endl;
+                //-------------------------------------------------------------------------------------------------------
 
                 // if (cy < cx)
                 // {
@@ -394,7 +518,44 @@ private:
             return;
         }
 
-        void pathPlanning(){
+        void goalpoints_marker(){
+
+            float f = 0.0;
+
+            visualization_msgs::Marker points;
+
+            points.header = _poly.header;
+            points.ns = "goal_points";
+
+                points.id = 2;
+
+            points.type = visualization_msgs::Marker::SPHERE_LIST;
+
+            if(!goal_vec.empty()){
+
+            geometry_msgs::Point p;
+
+            for (int i = 0; i < goal_vec.size(); i++)
+            {
+                p.x = goal_vec.at(i).x;
+                p.y = goal_vec.at(i).y;
+        
+                points.points.push_back(p);
+            }
+
+            points.action = visualization_msgs::Marker::ADD;
+
+            // DER MANGLER Marker::DELETE Statement ....
+
+            points.color.g = 1.0f;
+            points.color.a = 1.0;
+
+            points.pose.orientation.w = 1.0;
+
+            points.scale.x = points.scale.y = 0.1;
+
+            pointline_pub.publish(points);
+            }
             return;
         }
 
@@ -411,6 +572,7 @@ public:
     {
         coor2d temp;
         minmax mm_temp;
+        goal goal_temp;
 
         _poly.header.frame_id = "map";
 
@@ -418,10 +580,15 @@ public:
 
         amcl_pose_sub = _n.subscribe("amcl_pose", 100, &DeminerClient::boundingBox, this);
 
+        goal_m_pub = _n.advertise<visualization_msgs::Marker>("goal_points", 10);
+
+        goal_m_timer = _n.createWallTimer(ros::WallDuration(0.1), boost::bind(&DeminerClient::goalpoints_marker, this));
+
         pointline_pub = _n.advertise<visualization_msgs::Marker>("demining_polygon_marker", 10);
+
         pointline_timer = _n.createWallTimer(ros::WallDuration(0.1), boost::bind(&DeminerClient::pointLines, this));
 
-        boundingbox_pub = _n.advertise<visualization_msgs::Marker>("bounding_box", 10);
+        //boundingbox_pub = _n.advertise<visualization_msgs::Marker>("bounding_box", 10);
 
         ROS_INFO("Please stand by, while the client initializes..");
         //Sleep needed for the initialization of SoundClient
