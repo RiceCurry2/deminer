@@ -33,57 +33,55 @@ namespace deminer{
 class DeminerClient{
 
 /*********************************************************************************************
- * @brief           Private definitions
+ * @brief           Private global definitions
  * @param _point    Namespace: geometry_msgs::PointStamped
  * @param _poly     Namespace: geometry_msgs::PolygonStamped
  *********************************************************************************************/
 private:
-    // Defining handlers, publishers and subcribers
+    // Defining handlers
     ros::NodeHandle _n;
     sound_play::SoundClient _sc;
 
-    //typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
-              actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> mb_client;
-              move_base_msgs::MoveBaseGoal goal;
+    // Actionlib "move_base" definitons 
+    actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> mb_client;
+    move_base_msgs::MoveBaseGoal goal;
 
-    //MoveBaseClient _ac;
-
-
+    // Polygon and point definitions
     geometry_msgs::PolygonStamped _poly;
     geometry_msgs::PointStamped _point; //maybe not used
     geometry_msgs::Point32 _as; //maybe not used
 
+    // ROS Publishers
     ros::Publisher pointline_pub;
     ros::Publisher goal_m_pub;
     ros::Publisher boundingbox_pub; //maybe not used
+
+    // ROS Subscribers
     ros::Subscriber pointclick_sub;
     ros::Subscriber amcl_pose_sub;
+
+    // ROS Walltimers
     ros::WallTimer pointline_timer;
     ros::WallTimer goal_timer;
 
-
+    // Defining the path to sound strings (used in PlaySound method)
     std::string path_to_sounds = "../catkin_ws/src/deminer/sounds/";
 
+    // Defining (client side) variables
     bool awaiting_center;
     bool sortingdone;
     float robot_width = 0.30f;
 
-    // Server side variables 
-    //_____________________________________________________________________________________________________________
+    // Defining (server side) variables 
     bool goalReached;
     bool donewaypoint;
-    //_____________________________________________________________________________________________________________
 
-    struct Vector2 //maybe not used
-    {
-        float m_x;
-        float m_y;
 
-        Vector2(float x, float y)
-        : m_x(x), m_y(y) {}
-
-        };
-
+    /*********************************************************************************************
+     * @brief                   Defining of coor2d structure member used for vector items
+     * @param distance_p1_p2    Calculates the distance from P1 to P2
+     * @return                  Distance from P1 (x1, x1) to P2 (x2, y2)
+     *********************************************************************************************/
     struct coor2d {
         float x1;
         float y1;
@@ -98,6 +96,9 @@ private:
         }
     };
 
+    /*********************************************************************************************
+     * @brief                   Probably not used (Subject for deletion)
+     *********************************************************************************************/
     struct minmax {
         float min_x; 
         float min_y;
@@ -113,18 +114,31 @@ private:
         }
     };
 
+    /*********************************************************************************************
+     * @brief                   Defining of s_goal structure member used for vector items
+     *                          Holds a simple x and y to be used in goal calculations
+     *********************************************************************************************/
     struct s_goal {
         float x; 
         float y;
     };
-
+    
+    /*********************************************************************************************
+     * @brief                   Defining of vectors
+     *********************************************************************************************/
+    // The vector which are going to hold the polygon points for further calculations
     std::vector<coor2d> vec;
-    std::vector<s_goal> goal_vec;
+    // The vector which are going to hold the top vector points of the polygon -> line: P0 to P1
     std::vector<s_goal> goal_vec_top;
+    // The vector which are going to hold the top vector points of the polygon -> line: P2 to P3
     std::vector<s_goal> goal_vec_bot;
+    // The final goal vector which are going to hold the sorted goals 
+    std::vector<s_goal> goal_vec;
 
-    //Maybe not used: std::vector<minmax> v_minmax;
 
+    /*********************************************************************************************
+     * @brief                   Probably not used (Subject for deletion)
+     *********************************************************************************************/
     struct compare_xy {
         bool operator ()(const coor2d& left, const coor2d& right) const {
         return (left.x1 < right.x1) || ((left.x1 == right.x1) && (left.y1 < right.y1));
@@ -137,12 +151,13 @@ private:
     }
     };
 
-/*********************************************************************************************
- * This is a function for the purpose of playing sound 
- * The '&' represents that the sound client publisher are passed by reference from the main.
- * This is done for the purpose of using the 'sc.' nameclasses outside the main loop.
- *********************************************************************************************/
+    /*********************************************************************************************
+     * @brief                   This is a method for the purpose of playing sound 
+     * @param playSound         Takes in an integer and SoundClient handler
+     * @return                  Sound feedback execution happens before return
+     *********************************************************************************************/
     void playSound(int a, sound_play::SoundClient& _sc){
+
     // Switch statement to handle the sound files
     switch(a)
     {
@@ -161,37 +176,52 @@ private:
     return;
 }
 
-   /**
-     * @brief Publish markers for visualization of points for boundary polygon.
-    */
-    void pointLines(){
 
+    /*********************************************************************************************
+     * @brief                   Publish markers for visualization of points for the search polygon
+     *                          This is interconnected in the initialization with boost::bind
+     *                         
+     *********************************************************************************************/
+    void pointLines(){
+    
+    // Float definition
     float f = 0.0;
 
+    // Type definition of points and line_strip
     visualization_msgs::Marker points, line_strip;
 
+    // Header initialization and namespace definiton
     points.header = line_strip.header = _poly.header;
     points.ns = line_strip.ns = "boundary_points";
 
+        // ID definition to avoid inconsistencies
         points.id = 0;
         line_strip.id = 1;
 
+    // Type definition of each marker
     points.type = visualization_msgs::Marker::SPHERE_LIST;
     line_strip.type = visualization_msgs::Marker::LINE_STRIP;
 
+    // if the ROS handled polygon vector is not empty (proceed)
     if(!_poly.polygon.points.empty()){
-
+        
+        // Use marker actions to add points and lines to rVIZ
         points.action = line_strip.action = visualization_msgs::Marker::ADD;
         points.pose.orientation.w = line_strip.pose.orientation.w = 1.0;
 
+        // Scaling definitions
         points.scale.x = points.scale.y = 0.1;
         line_strip.scale.x = 0.05;
 
+        // BOOST_FOREACH iterates each point from the ROS handled polygon vector and into a conversion vector
+        // Meaning that the point32 type from geometry_msgs::PolygonStamped->polygon->points are converted
+        // From a float32 to a float64 data type (Enables visualization markers to interact with the point)
         BOOST_FOREACH(geometry_msgs::Point32 point, _poly.polygon.points){
         line_strip.points.push_back(costmap_2d::toPoint(point));
         points.points.push_back(costmap_2d::toPoint(point));
         }
 
+        // ------------------------------------------------ BREAK POINT FOR COMMENTING: CONTINUE HERE (KMH) -----------------------------------------------------------------------
         if(awaiting_center){
             line_strip.points.push_back(costmap_2d::toPoint(_poly.polygon.points.front()));
             // RED Color (Points and lines)
@@ -217,6 +247,82 @@ private:
         pointline_pub.publish(line_strip);
     }
 
+    void rotation(float xGoal, float yGoal){
+    float dx;
+    float dy;
+    float angle_to_goal;
+    float dist;
+    float xPos;
+    float yPos;
+    float theta;
+
+    dx = xGoal - xPos;                            //distance robot to goal in x
+    dy = yGoal - yPos;                            //distance robot to goal in y
+    angle_to_goal = atan2(dy, dx);                //calculate angle through distance from robot to goal in x and y
+    dist = sqrt(pow(dx, 2) + pow(dy, 2));         //calculate distance
+
+    double radians = theta * (M_PI/180);
+    tf::Quaternion quaternion;
+    quaternion = tf::createQuaternionFromYaw(radians);
+    geometry_msgs::Quaternion qMsg;
+    tf::quaternionTFToMsg(quaternion, qMsg);
+    goal.target_pose.pose.orientation = qMsg;
+
+    // find out which turndirection is better
+    // the bigger the angle, the bigger turn, - when clockwise
+    //turn = atan2(sin(angle_to_goal-theta), cos(angle_to_goal-theta))
+
+    //if abs(angle_to_goal - theta < 0.1){
+    //move_forward = True
+
+    }
+    // This was a test
+    // ................................................................................................................. 
+    // bool quaternionGoal();
+    //     //declare some variables
+    // tf::StampedTransform poseRobot;
+    // geometry_msgs::PoseStamped robot_pose;
+    // //initialize robot angle
+    // double yaw_r(50);
+    // //try what's between {}
+    // try
+    // {
+    //     ROS_DEBUG("Pose du robot ...");
+    //     // have the transform from /map to /base_link (robot frame) and put it in "poseRobot": this is the robot pose in /map!
+    //     listener.lookupTransform("/map","/base_link",ros::Time(0), poseRobot);
+
+    //     //get the orientation: it is a quaternion so don't worry about the z. It doesn't mean there is a 3D thing here!
+    //     robot_pose.pose.orientation.x = poseRobot.getRotation().getX();
+    //     robot_pose.pose.orientation.y = poseRobot.getRotation().getY();
+    //     robot_pose.pose.orientation.z = poseRobot.getRotation().getZ();
+    //     robot_pose.pose.orientation.w = poseRobot.getRotation().getW();
+
+    //     // convert the quaternion to an angle (the yaw of the robot in /map frame!)         
+    //     yaw_r = tf::getYaw(robot_pose.pose.orientation);  
+    // }
+    // catch(tf::TransformException &ex) //if the try doesn't succeed, you fall here!
+    // {
+    //     // continue
+    //     ROS_INFO("error. no robot pose!");
+    // }
+
+    //         //angleDes is the goal angle in /map frame you get it by subscribing to goal 
+    //         //The angleDes you should get it in a call back normally by converting the goals orientation to a yaw. Exactly as we have done to get robot's yaw
+
+    //         //delta_yaw is what you want to get
+    //         double delta_yaw = angleDes - yaw_r;
+    //         //and here I just make sure my angle is between minus pi and pi!
+    // if (delta_yaw > M_PI)
+    //         delta_yaw -= 2*M_PI;
+    // if (delta_yaw <= -M_PI)
+    //         delta_yaw += 2*M_PI;
+    // ...................................................................................................................
+
+    bool turnOnGoal(){
+    
+    }
+    
+    
     bool moveToGoal(float xGoal, float yGoal)
     {
         // wait for the action server to come up
@@ -224,13 +330,42 @@ private:
         {
         ROS_INFO("Waiting for the move_base action server to come up");
         }
+        // define temporary dx and dy parameters
+        float dx;
+        float dy;
 
-        // set up the frame parameters
+        // define the angle_to_goal and theta parameter
+        float angle_to_goal;
+        float theta; // theta is the angle (maybe not used/maybe angle_to_goal)
+
+        // setup frame parameters
         goal.target_pose.header.frame_id = "map";
         goal.target_pose.header.stamp = ros::Time::now();
 
-        /* moving towards the goal*/
+        // define robot pose message
+        const geometry_msgs::PoseWithCovarianceStampedConstPtr msg;
 
+        //------------------------------------------------------------------------------------------------------------------
+        // Rotation to goal, quaternion from yaw via degrees and radians.
+
+        double X = msg->pose.pose.position.x;               // Robot X postition
+        double Y = msg->pose.pose.position.y;               // Robot Y postition
+        double Yaw = tf::getYaw(msg->pose.pose.orientation);// Robot Yaw
+
+        dx = xGoal - X;                                     //distance robot to goal in x
+        dy = yGoal - Y;                                     //distance robot to goal in y
+        theta = atan2(dy, dx);                              //calculate angle through distance from robot to goal in x and y
+
+        //float theta = 90.0;                               // Degrees
+        float radians = theta * (M_PI/180);                 // Degrees to radians 
+        tf::Quaternion quaternion;                          // Namespace definition (maybe move to global)
+        quaternion = tf::createQuaternionFromYaw(radians);  // Radians to quarternion 
+        geometry_msgs::Quaternion qMsg;                     // Define quarternion msg (x, y, z, w)
+        tf::quaternionTFToMsg(quaternion, qMsg);            // Store in the msg (represents orientation in free space)
+        goal.target_pose.pose.orientation = qMsg;           // Set target pose to the quartonion oriented towards the goal
+        //-------------------------------------------------------------------------------------------------------------------
+
+        /* moving towards the goal*/
         goal.target_pose.pose.position.x = xGoal;
         goal.target_pose.pose.position.y = yGoal;
         goal.target_pose.pose.position.z = 0.0;
@@ -239,21 +374,96 @@ private:
         goal.target_pose.pose.orientation.z = 0.0;
         goal.target_pose.pose.orientation.w = 1.0;
 
+    
         ROS_INFO("Sending goal location ...");
         mb_client.sendGoal(goal);
 
         mb_client.waitForResult();
 
-    if (mb_client.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
-    {
-        ROS_INFO("You have reached the destination");
-        return true;
+        if (mb_client.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+        {
+            ROS_INFO("You have reached the destination");
+            return true;
+        }
+        else
+        {
+            ROS_INFO("The robot failed to reach the destination");
+            return false;
+        }
     }
-    else
-    {
-        ROS_INFO("The robot failed to reach the destination");
-        return false;
-    }
+    // This method recieves the goal that it has already reached to reached it again with a calculated orientation.
+    bool rotateOnGoal(float xGoal, float yGoal){
+        // wait for the action server to come up
+        while (!mb_client.waitForServer(ros::Duration(5.0)))
+        {
+        ROS_INFO("Waiting for the move_base action server to come up");
+        }
+        // define temporary dx and dy parameters
+        float dx;
+        float dy;
+
+        // define the angle_to_goal and theta parameter
+        float angle_to_goal;
+        float theta; // theta is the angle (maybe not used/maybe angle_to_goal)
+
+        // setup frame parameters
+        goal.target_pose.header.frame_id = "map";
+        goal.target_pose.header.stamp = ros::Time::now();
+
+        // define robot pose message
+        const geometry_msgs::PoseWithCovarianceStampedConstPtr msg;
+        //------------------------------------------------------------------------------------------------------------------
+        // Rotation to goal, quaternion from yaw via degrees and radians.
+
+        double X = msg->pose.pose.position.x;               // Robot X postition
+        double Y = msg->pose.pose.position.y;               // Robot Y postition
+        double Yaw = tf::getYaw(msg->pose.pose.orientation);// Robot Yaw
+
+        dx = xGoal - X;                                     //distance robot to goal in x
+        dy = yGoal - Y;                                     //distance robot to goal in y
+        theta = atan2(dy, dx);                              //calculate angle through distance from robot to goal in x and y
+
+        //float theta = 90.0;                               // Degrees
+        float radians = theta * (M_PI/180);                 // Degrees to radians 
+        tf::Quaternion quaternion;                          // Namespace definition (maybe move to global)
+        quaternion = tf::createQuaternionFromYaw(radians);  // Radians to quarternion 
+        geometry_msgs::Quaternion qMsg;                     // Define quarternion msg (x, y, z, w)
+        tf::quaternionTFToMsg(quaternion, qMsg);            // Store in the msg (represents orientation in free space)
+        //goal.target_pose.pose.orientation = qMsg;         // Set target pose to the quartonion oriented towards the goal
+        //-------------------------------------------------------------------------------------------------------------------
+
+        goal.target_pose.pose.position.x = xGoal;
+        goal.target_pose.pose.position.y = yGoal;
+        //goal.target_pose.pose.position.z = 0.0;
+
+        // OR ELSE TRY
+
+        // // goal.target_pose.pose.position.x = X; // this, robot pose
+        // // goal.target_pose.pose.position.y = Y; // this, robot pose
+        //goal.target_pose.pose.position.z = 0.0;
+
+        goal.target_pose.pose.orientation = qMsg;           // Set target pose to the quartonion oriented towards the goal
+        //goal.target_pose.pose.orientation.x = 0.0;
+        //goal.target_pose.pose.orientation.y = 0.0;
+        //goal.target_pose.pose.orientation.z = 0.0;
+        //goal.target_pose.pose.orientation.w = 1.0;
+
+    
+        ROS_INFO("Sending goal location ...");
+        mb_client.sendGoal(goal);
+
+        mb_client.waitForResult();
+
+        if (mb_client.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+        {
+            ROS_INFO("The robot has reached the correct orientation");
+            return true;
+        }
+        else
+        {
+            ROS_INFO("The robot failed to reach the correct orientation");
+            return false;
+        }
     }
 
             // dec 7 stop

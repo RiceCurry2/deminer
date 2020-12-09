@@ -10,7 +10,7 @@
   </include>
 
   <!-- Map server -->
-    <arg name="map_file" value="$(find deminer)/maps/StudyRoomGB02.yaml"></arg>
+  <arg name="map_file" value="$(find deminer)/maps/StudyRoomGB02.yaml"></arg>
   <node pkg="map_server" type="map_server" name="map_server" args="$(arg map_file)"/>
   
 
