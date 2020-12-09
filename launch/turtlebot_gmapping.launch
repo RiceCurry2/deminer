@@ -3,7 +3,11 @@
 <launch>
   <include file="$(find turtlebot_bringup)/launch/minimal.launch" />
   <include file="$(find turtlebot_navigation)/launch/gmapping_demo.launch" />
-  <node pkg="deminer" name="navigation_node" type="navigation_node"/>
-  <node name= "click_point" type="click_point" pkg="deminer" output="screen" launch-prefix="gnome-terminal --command"/>
+
+  <!-- 
+  We need to add turtlebot teleop key operation to this launch file 
+  (preferably sort it into a server and client version)
+  -->
+
   <node pkg="rviz" name="$(anon rviz)"  type="rviz" args="-d $(find deminer)/config/demining.rviz"/>
 </launch>

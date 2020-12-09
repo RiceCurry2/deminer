@@ -1,5 +1,7 @@
+<!-- This launch file is a dependency to the _deminer_client.launch and custom_amcl.launch -->
 <launch>
 <include file="$(find turtlebot_navigation)/launch/includes/velocity_smoother.launch.xml"/>
+<param name="accel_lim_v" value="0.5"/>
 <include file="$(find turtlebot_navigation)/launch/includes/safety_controller.launch.xml"/>
 <arg name="odom_frame_id" default="odom"/>
 <arg name="base_frame_id" default="base_footprint"/>

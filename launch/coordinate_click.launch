@@ -4,5 +4,5 @@
 <node name="rviz" pkg="rviz" type="rviz" args="-d $(find deminer)/config/lines_config.rviz"/>
 <arg name="map_file" value="$(find deminer)/maps/StudyroomGB.yaml"> </arg>	
 <node pkg="map_server" type="map_server" name="map_server" args="$(arg map_file)"/>
-<node name= "xyclick" type="xyclick" pkg="deminer" output="screen" launch-prefix="gnome-terminal --command"/>
+<node name= "click" type="click" pkg="deminer" output="screen" launch-prefix="gnome-terminal --command"/>
 </launch>

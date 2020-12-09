@@ -1,3 +1,4 @@
+<!-- This launch file is dependent on the custom_move_basse.launch and custom_amcl.launch -->
 <launch>
 <include file="$(find turtlebot_bringup)/launch/minimal.launch" />
 
@@ -17,8 +18,8 @@
 
 <node name="playing_sound_node" pkg="sound_play" type="soundplay_node.py" output="screen"/>
 
-<node name="rviz" pkg="rviz" type="rviz" args="-d $(find deminer)/config/coordrun.rviz"/>
+<node name="rviz" pkg="rviz" type="rviz" args="-d $(find deminer)/rviz/_deminer_client.rviz"/>
 
-<node name= "boundary_selection" type="boundary_selection" pkg="deminer" output="screen" launch-prefix="gnome-terminal --command"/>
+<node name= "deminer_client" type="deminer_client" pkg="deminer" output="screen" launch-prefix="gnome-terminal --command"/>
 
 </launch>

@@ -5,6 +5,7 @@
 #include <costmap_2d/footprint.h>
 #include <move_base_msgs/MoveBaseAction.h>
 #include <actionlib/client/simple_action_client.h>
+#include <actionlib/server/simple_action_server.h>
 
 #include "geometry_msgs/PointStamped.h" //Maybe not used
 #include "geometry_msgs/PolygonStamped.h"
@@ -41,6 +42,13 @@ private:
     ros::NodeHandle _n;
     sound_play::SoundClient _sc;
 
+    //typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
+              actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> mb_client;
+              move_base_msgs::MoveBaseGoal goal;
+
+    //MoveBaseClient _ac;
+
+
     geometry_msgs::PolygonStamped _poly;
     geometry_msgs::PointStamped _point; //maybe not used
     geometry_msgs::Point32 _as; //maybe not used
@@ -51,13 +59,20 @@ private:
     ros::Subscriber pointclick_sub;
     ros::Subscriber amcl_pose_sub;
     ros::WallTimer pointline_timer;
-    ros::WallTimer goal_m_timer;
+    ros::WallTimer goal_timer;
 
 
     std::string path_to_sounds = "../catkin_ws/src/deminer/sounds/";
 
     bool awaiting_center;
+    bool sortingdone;
     float robot_width = 0.30f;
+
+    // Server side variables 
+    //_____________________________________________________________________________________________________________
+    bool goalReached;
+    bool donewaypoint;
+    //_____________________________________________________________________________________________________________
 
     struct Vector2 //maybe not used
     {
@@ -98,15 +113,15 @@ private:
         }
     };
 
-    struct goal {
+    struct s_goal {
         float x; 
         float y;
     };
 
-
     std::vector<coor2d> vec;
-
-    std::vector<goal> goal_vec;
+    std::vector<s_goal> goal_vec;
+    std::vector<s_goal> goal_vec_top;
+    std::vector<s_goal> goal_vec_bot;
 
     //Maybe not used: std::vector<minmax> v_minmax;
 
@@ -128,7 +143,6 @@ private:
  * This is done for the purpose of using the 'sc.' nameclasses outside the main loop.
  *********************************************************************************************/
     void playSound(int a, sound_play::SoundClient& _sc){
-
     // Switch statement to handle the sound files
     switch(a)
     {
@@ -139,12 +153,11 @@ private:
         _sc.playWave(path_to_sounds + "last_point.wav");
         return;
     case 2:
-        _sc.playWave(path_to_sounds + "boundary_selection.wav");
+        _sc.playWave(path_to_sounds + "goal_reached.wav");
         return;
     default:
         ROS_ERROR("Error: The playsound function recieved an undefined number");
     }
-
     return;
 }
 
@@ -204,6 +217,149 @@ private:
         pointline_pub.publish(line_strip);
     }
 
+    bool moveToGoal(float xGoal, float yGoal)
+    {
+        // wait for the action server to come up
+        while (!mb_client.waitForServer(ros::Duration(5.0)))
+        {
+        ROS_INFO("Waiting for the move_base action server to come up");
+        }
+
+        // set up the frame parameters
+        goal.target_pose.header.frame_id = "map";
+        goal.target_pose.header.stamp = ros::Time::now();
+
+        /* moving towards the goal*/
+
+        goal.target_pose.pose.position.x = xGoal;
+        goal.target_pose.pose.position.y = yGoal;
+        goal.target_pose.pose.position.z = 0.0;
+        goal.target_pose.pose.orientation.x = 0.0;
+        goal.target_pose.pose.orientation.y = 0.0;
+        goal.target_pose.pose.orientation.z = 0.0;
+        goal.target_pose.pose.orientation.w = 1.0;
+
+        ROS_INFO("Sending goal location ...");
+        mb_client.sendGoal(goal);
+
+        mb_client.waitForResult();
+
+    if (mb_client.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+    {
+        ROS_INFO("You have reached the destination");
+        return true;
+    }
+    else
+    {
+        ROS_INFO("The robot failed to reach the destination");
+        return false;
+    }
+    }
+
+            // dec 7 stop
+        // // // NOTE: Vi kender antal punkter i top og bund, et if loop kan finde ud af om flg. goals er forskudte.   
+        // // void send_goal(){
+        // // //wait for the action server to come up
+        // // while(!mb_client.waitForServer(ros::Duration(5.0))){
+        // // ROS_INFO("Waiting for the move_base action server to come up");
+        // // }
+        // //     if (!goal_vec.empty()){
+        // //     ROS_INFO("Step1");
+        // //     move_base_msgs::MoveBaseGoal goal;
+
+        // //     goal.target_pose.header.frame_id = "base_link";
+        // //     goal.target_pose.header.stamp = ros::Time::now();
+
+        // //     for (int i = 0; i < goal_vec.size();)
+        // //     {
+        // //         if (moving_ == true)
+        // //         {
+        // //         ROS_INFO("Robot is moving");
+        // //         }else{
+        // //         goal.target_pose.pose.position.x = goal_vec.at(i).x;
+        // //         goal.target_pose.pose.position.y = goal_vec.at(i).y;
+        // //         goal.target_pose.pose.orientation.w = 1.0;
+        // //         ROS_INFO("Sending goal");
+        // //         std::cout << goal_vec.at(i).x << ", " << goal_vec.at(i).y << std::endl;
+        // //         moving_ = true;
+        // //         mb_client.sendGoal(goal, boost::bind(&DeminerClient::doneCb, this, _1, _2));
+        // //         i++;
+        // //         }
+        // //     // Need boost::bind to pass in the 'this' pointer
+
+        // //     // if(mb_client.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+        // //     // ROS_INFO("Hooray, the base has reached the goal!");
+        // //     // else
+        // //     // ROS_INFO("The base failed to reach the goal for some reason");
+        // //     // }
+        // // }
+        // // }
+        // // return;
+        // // }
+
+
+
+        // // void doneCb(const actionlib::SimpleClientGoalState& state, const move_base_msgs::MoveBaseResultConstPtr& result)
+        // // {                
+        // //     ROS_INFO("DONECB: Finished in state [%s]", state.toString().c_str());  
+        // //     if (mb_client.getState() == actionlib::SimpleClientGoalState::ACTIVE)
+        // //     {
+        // //         moving_ = true;
+        // //         return;
+        // //     }      
+        // //     if (mb_client.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+        // //     {
+        // //         moving_ = false;
+        // //     }
+        // //     if (mb_client.getState() == actionlib::SimpleClientGoalState::ABORTED)
+        // //     {
+        // //         moving_ = false;
+        // //     }
+        // //     return;    
+        // // }
+
+            void goalpoints_marker(){
+
+            float f = 0.0;
+
+            visualization_msgs::Marker points;
+
+            points.header = _poly.header;
+            points.ns = "goal_points";
+
+                points.id = 2;
+
+            points.type = visualization_msgs::Marker::SPHERE_LIST;
+
+            if(!goal_vec.empty()){
+
+            geometry_msgs::Point p;
+
+            for (int i = 0; i < goal_vec.size(); i++)
+            {
+                p.x = goal_vec.at(i).x;
+                p.y = goal_vec.at(i).y;
+        
+                points.points.push_back(p);
+            }
+
+            points.action = visualization_msgs::Marker::ADD;
+
+            // DER MANGLER Marker::DELETE Statement ....
+
+            points.color.g = 1.0f;
+            points.color.a = 1.0;
+
+            points.pose.orientation.w = 1.0;
+
+            points.scale.x = points.scale.y = 0.1;
+
+            pointline_pub.publish(points);
+            }
+            return;
+        }
+    
+
     /*********************************************************************************************
      * @brief Function to build polygon from points recieved from rVIZ gui
      * @param point Point recieved from rviz
@@ -218,10 +374,18 @@ private:
             if(!pointInPolygon(point->point,_poly.polygon)){
             ROS_ERROR("Starting point is not inside polygon, restarting");
         }else{
+            //actionlib::SimpleActionClient<deminer::SearchTaskAction> exploreClient("explore_server", true);
+            //exploreClient.waitForServer();
+            //ROS_INFO("Sending goal");
+            //frontier_exploration::ExploreTaskGoal goal;
+            //goal.explore_center = *point;
+            //goal.explore_boundary = input_;
+            //exploreClient.sendGoal(goal);
             // Creating new item "temp" in struct
             coor2d xy_temp;
             minmax mm_temp;
-            goal goal_temp;
+            s_goal goal_temp;
+            s_goal goal_temp2;
 
                 for (int i=0; i<_poly.polygon.points.size(); i++) 
             { 
@@ -238,7 +402,6 @@ private:
                 xy_temp.y1 = _poly.polygon.points.at(i).y;
 
                 vec.push_back(xy_temp);
-
             }
 
             std::cout << "vector elements: " << vec.size() << std::endl;
@@ -306,37 +469,141 @@ private:
                 dx /= dist;
                 dy /= dist;
 
+                // Points from line0_1
+                // first goal_vec.at(0) is the point which begins at point(0-3) 1 in the polygon
                 for (int i = 0; i < steps0_1; i++)
                 {
                 goal_temp.x = vec.at(1).x1 + -robot_width*i * dx;
                 goal_temp.y = vec.at(1).y1 + -robot_width*i * dy;
                 
-                    goal_vec.push_back(goal_temp);
+                    goal_vec_top.push_back(goal_temp);
                 }
 
                             // Point2        // Point1 
-                dx = (vec.at(3).x1) - (vec.at(2).x1);
-                dy = (vec.at(3).y1) - (vec.at(2).y1);
+                dx = (vec.at(2).x1) - (vec.at(3).x1);
+                dy = (vec.at(2).y1) - (vec.at(3).y1);
                 dist = sqrt(dx*dx + dy*dy);
                 dx /= dist;
                 dy /= dist;
 
+                // Points from line2_3
+                // first goal_vec.at(dependent on steps0_1) is the point which begins at point(0-3) 3 in the polygon
                 for (int i = 0; i < steps2_3; i++)
                 {
-                goal_temp.x = vec.at(3).x1 + -robot_width*i * dx;
-                goal_temp.y = vec.at(3).y1 + -robot_width*i * dy;
+                goal_temp.x = vec.at(2).x1 + -robot_width*i * dx;
+                goal_temp.y = vec.at(2).y1 + -robot_width*i * dy;
                 
-                    goal_vec.push_back(goal_temp);                
+                    goal_vec_bot.push_back(goal_temp);                
                 }
 
-                for (int i=0; i<goal_vec.size(); i++) 
+                std::cout << "TOP POINTS" << std::endl;
+                for (int i=0; i<goal_vec_top.size(); i++) 
             { 
                  // console out vector at current state (pre-sort)
-                 std::cout << goal_vec.at(i).x << ", ";
-                 std::cout << goal_vec.at(i).y << std::endl;
-
+                 std::cout << goal_vec_top.at(i).x << ", ";
+                 std::cout << goal_vec_top.at(i).y << std::endl;
             }
-                
+
+                std::cout << " " << std::endl;
+                std::cout << "BOT POINTS" << std::endl;
+                for (int i=0; i<goal_vec_bot.size(); i++) 
+            { 
+                // console out vector at current state (pre-sort)
+                std::cout << goal_vec_bot.at(i).x << ", ";
+                std::cout << goal_vec_bot.at(i).y << std::endl;
+            }
+
+            if (!goal_vec_top.empty() && !goal_vec_bot.empty()){
+
+                auto v1 = goal_vec_top.begin ();
+                auto v2 = goal_vec_bot.begin ();
+
+                while (v1 != goal_vec_top.end () && v2 != goal_vec_bot.end ())
+                {
+                goal_vec.push_back(*v1);
+                goal_vec.push_back(*v2);
+                v1++;
+                v2++;
+                goal_vec.push_back(*v2);
+                goal_vec.push_back(*v1);
+                v1++;
+                v2++;
+                }
+                // if both the vectors have the same size we would be finished 
+                if (v1 != goal_vec_top.end ()) // v1 is the longer one
+                {
+                    while (v1 != goal_vec_top.end ())
+                    {
+                    goal_vec.push_back (*v1);
+                    ++v1;
+                    }
+                }
+                if (v2 != goal_vec_bot.end ()) // v2 is the longer one
+                {
+                    while (v2 != goal_vec_bot.end ())
+                    {
+                    goal_vec.push_back (*v2);
+                    ++v2;
+                    }
+                }
+            }
+
+            _poly.polygon.points.clear();
+
+            ROS_INFO("Clearing polygon vector and initializing goal point marker");
+
+            ros::Duration(0.2).sleep();
+
+            goalpoints_marker();
+
+            ros::spinOnce();
+
+            //sleep added for the purpose of making a video (need to get to the camera)
+            ros::Duration(8).sleep();
+
+            donewaypoint = true;
+            sortingdone = true;
+
+            while (sortingdone = true)
+            {
+                if (donewaypoint == false )
+                {
+                    ros::spinOnce();
+                }
+                if (donewaypoint == true)
+                for (int i=0; i<=goal_vec.size(); i++) 
+                { 
+                    // console out vector at current state (pre-sort)
+                    std::cout << "Sending goal to following coordinates: ";
+                    
+                    std::cout << goal_vec.at(i).x << ", ";
+
+                    std::cout << goal_vec.at(i).y << std::endl;
+
+                    goalReached = moveToGoal(goal_vec.at(i).x, goal_vec.at(i).y);
+                    ROS_INFO("start moving");
+                    ros::spinOnce();
+                    if (goalReached)
+                    {
+                        ROS_INFO("Congratulations![%f, %f]", goal_vec.at(i).x, goal_vec.at(i).y);
+                        DeminerClient::playSound(2,_sc);
+                        ros::spinOnce();
+
+                        // ros::spinOnce();
+                    }
+                    else
+                    {
+                        ROS_INFO("Hard Luck!");
+                        // sc.playWave(path_to_sounds+"short_buzzer.wav");
+                    }
+                }
+            }
+
+            ROS_INFO("Goal list is empty, beginning cleanup..");
+            //goal_vec_top.clear();
+            //goal_vec_bot.clear();
+            //goal_vec.clear();
+            sortingdone = false;
 
                 //std::cout << vec.at(1).x1 << " - " << vec.at(0).x1 << " = " << dx << std::endl;
                 //std::cout << vec.at(1).y1 << " - " << vec.at(0).y1 << " = " << dy << std::endl;
@@ -462,15 +729,9 @@ private:
                 //     std::cout << vec.at(i).x << ",  ";
                 //     std::cout << vec.at(i).y << std::endl;
                 // }
-
-        ROS_WARN("Waiting for the move_base action server to come up");
-        mm_temp.reset();
-
         }
             awaiting_center = false;
-            _poly.polygon.points.clear();
-            vec.clear();
-            
+
             //Maybe not used: v_minmax.clear();
             
     
@@ -505,6 +766,7 @@ private:
             _poly.header.stamp = ros::Time::now();
             ROS_INFO("Point added to the database");
         }
+        //send_goal();
     }
 
         void boundingBox(const geometry_msgs::PoseWithCovarianceStampedConstPtr &msg)
@@ -518,46 +780,6 @@ private:
             return;
         }
 
-        void goalpoints_marker(){
-
-            float f = 0.0;
-
-            visualization_msgs::Marker points;
-
-            points.header = _poly.header;
-            points.ns = "goal_points";
-
-                points.id = 2;
-
-            points.type = visualization_msgs::Marker::SPHERE_LIST;
-
-            if(!goal_vec.empty()){
-
-            geometry_msgs::Point p;
-
-            for (int i = 0; i < goal_vec.size(); i++)
-            {
-                p.x = goal_vec.at(i).x;
-                p.y = goal_vec.at(i).y;
-        
-                points.points.push_back(p);
-            }
-
-            points.action = visualization_msgs::Marker::ADD;
-
-            // DER MANGLER Marker::DELETE Statement ....
-
-            points.color.g = 1.0f;
-            points.color.a = 1.0;
-
-            points.pose.orientation.w = 1.0;
-
-            points.scale.x = points.scale.y = 0.1;
-
-            pointline_pub.publish(points);
-            }
-            return;
-        }
 
 public:
 
@@ -568,11 +790,15 @@ public:
     DeminerClient() :
         _n(),
         _sc(),
-        awaiting_center(false)
+        mb_client("move_base", true),
+        awaiting_center(false),
+        goalReached(false),
+        donewaypoint(false),
+        sortingdone(false)
     {
         coor2d temp;
         minmax mm_temp;
-        goal goal_temp;
+        s_goal goal_temp;
 
         _poly.header.frame_id = "map";
 
@@ -581,8 +807,6 @@ public:
         amcl_pose_sub = _n.subscribe("amcl_pose", 100, &DeminerClient::boundingBox, this);
 
         goal_m_pub = _n.advertise<visualization_msgs::Marker>("goal_points", 10);
-
-        goal_m_timer = _n.createWallTimer(ros::WallDuration(0.1), boost::bind(&DeminerClient::goalpoints_marker, this));
 
         pointline_pub = _n.advertise<visualization_msgs::Marker>("demining_polygon_marker", 10);
 

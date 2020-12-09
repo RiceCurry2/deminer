@@ -1,3 +1,4 @@
+<!-- This launch file is a dependency to the _deminer_client.launch and custom_move_base.launch -->
 <launch>
   <!-- 3D sensor -->
   <arg name="3d_sensor" default="$(env TURTLEBOT_3D_SENSOR)"/>  <!-- r200, kinect, asus_xtion_pro -->
@@ -9,7 +10,7 @@
   </include>
 
   <!-- Map server -->
-    <arg name="map_file" value="$(find deminer)/maps/StudyroomGB.yaml"></arg>
+    <arg name="map_file" value="$(find deminer)/maps/StudyRoomGB02.yaml"></arg>
   <node pkg="map_server" type="map_server" name="map_server" args="$(arg map_file)"/>
   
 
@@ -27,7 +28,7 @@
   <!-- Move base -->
   <arg name="custom_param_file" default="$(find turtlebot_navigation)/param/$(arg 3d_sensor)_costmap_params.yaml"/>
   <include file="$(find deminer)/launch/custom_move_base.launch">
-    <arg name="custom_param_file" value="$(arg custom_param_file)"/>
+  <arg name="custom_param_file" value="$(arg custom_param_file)"/>
   </include>
 
 </launch>

@@ -7,76 +7,52 @@ add_compile_options(-std=c++11)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS 
-  costmap_2d
+find_package(catkin REQUIRED COMPONENTS
+  costmap_2d 
   dynamic_reconfigure 
   roscpp
   visualization_msgs
   move_base_msgs
-  actionlib
   geometry_msgs
   std_msgs
+  tf
   kobuki_msgs
+  actionlib
+  actionlib_msgs
+#  message_generation
 )
 
 ## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
+find_package(Boost REQUIRED)
+find_package(PCL REQUIRED COMPONENTS common)
 
-
-## Uncomment this if the package has a setup.py. This macro ensures
-## modules and global scripts declared therein get installed
-## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
-# catkin_python_setup()
-
-################################################
-## Declare ROS messages, services and actions ##
-################################################
-
-## To declare and build messages, services or actions from within this
-## package, follow these steps:
-## * Let MSG_DEP_SET be the set of packages whose message types you use in
-##   your messages/services/actions (e.g. std_msgs, actionlib_msgs, ...).
-## * In the file package.xml:
-##   * add a build_depend tag for "message_generation"
-##   * add a build_depend and a run_depend tag for each package in MSG_DEP_SET
-##   * If MSG_DEP_SET isn't empty the following dependency has been pulled in
-##     but can be declared for certainty nonetheless:
-##     * add a run_depend tag for "message_runtime"
-## * In this file (CMakeLists.txt):
-##   * add "message_generation" and every package in MSG_DEP_SET to
-##     find_package(catkin REQUIRED COMPONENTS ...)
-##   * add "message_runtime" and every package in MSG_DEP_SET to
-##     catkin_package(CATKIN_DEPENDS ...)
-##   * uncomment the add_*_files sections below as needed
-##     and list every .msg/.srv/.action file to be processed
-##   * uncomment the generate_messages entry below
-##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+#add_message_files(
+#  FILES
+#  Deminer.msg
+#)
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+#add_service_files(
+#FILES
+#GetNextTask.srv
+#)
 
 ## Generate actions in the 'action' folder
-# add_action_files(
-#   FILES
-#   Action1.action
-#   Action2.action
-# )
+#add_action_files(
+#FILES 
+#DeminerTask.action
+#)
 
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
 #   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
+#   geometry_msgs
+#   std_msgs
+#   actionlib_msgs
+#   move_base_msgs
+#   visualization_msgs
 # )
 
 ################################################
@@ -109,9 +85,16 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(INCLUDE_DIRS include
-#  LIBRARIES nav
-#  CATKIN_DEPENDS other_catkin_pkg
-#  DEPENDS system_lib
+INCLUDE_DIRS include
+CATKIN_DEPENDS
+  dynamic_reconfigure
+  geometry_msgs
+  roscpp
+  tf
+  actionlib
+DEPENDS
+  PCL
+  Boost
 )
 
 ###########
@@ -121,51 +104,22 @@ catkin_package(INCLUDE_DIRS include
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-include  
-${catkin_INCLUDE_DIRS})
-
-## Declare a C++ library
-# add_library(nav
-#   src/${PROJECT_NAME}/nav.cpp
-# )
-
-## Add cmake target dependencies of the library
-## as an example, code may need to be generated before libraries
-## either from message generation or dynamic reconfigure
-# add_dependencies(nav ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
-## Declare a C++ executable
-add_executable(navigation_node src/nav.cpp)
-add_executable(click_point src/click_point.cpp)
-add_executable(boundary_selection src/boundary_selection.cpp)
-add_executable(xyclick src/click.cpp)
-add_executable(vispose src/vispose.cpp)
-
-
-## Add cmake target dependencies of the executable
-## same as for the library above
-# add_dependencies(navigation ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
-## Specify libraries to link a library or executable target against
-target_link_libraries(navigation_node
-${catkin_LIBRARIES}
+  include
+  ${catkin_INCLUDE_DIRS}
+  ${Boost_INCLUDE_DIRS}
+  ${PCL_INCLUDE_DIRS}
 )
 
-target_link_libraries(click_point
-${catkin_LIBRARIES}
-)
+#add_executable(deminer_server src/deminer_server.cpp)
+#target_link_libraries(deminer_server ${catkin_LIBRARIES})
+#add_dependencies(deminer_server ${PROJECT_NAME}_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
-target_link_libraries(boundary_selection
-${catkin_LIBRARIES}
-)
+add_executable(deminer_client src/deminer_client.cpp)
+target_link_libraries(deminer_client ${catkin_LIBRARIES})
+# add_dependencies(deminer_client ${PROJECT_NAME}_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
-target_link_libraries(xyclick
-${catkin_LIBRARIES}
-)
-
-target_link_libraries(vispose
-${catkin_LIBRARIES}
-)
+add_executable(click src/click.cpp)
+target_link_libraries(click ${catkin_LIBRARIES})
 
 
 #############
@@ -173,51 +127,19 @@ ${catkin_LIBRARIES}
 #############
 
 # all install targets should use catkin DESTINATION variables
-# See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
 
-## Mark executable scripts (Python etc.) for installation
-## in contrast to setup.py, you can choose the destination
-# install(PROGRAMS
-#   scripts/my_python_script
-#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
 
-########################################################################################
-## Mark executables and/or libraries for installation
-# install(TARGETS nav navigation_node
-#   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
-#########################################################################################
-
-## Mark cpp header files for installation
-# install(DIRECTORY include/${PROJECT_NAME}/
-#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-#   FILES_MATCHING PATTERN "*.h"
-#   PATTERN ".svn" EXCLUDE
-# )
+install(TARGETS deminer_client #deminer_server 
+        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 install(DIRECTORY include/${PROJECT_NAME}/
         DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
         PATTERN ".svn" EXCLUDE)
 
-## Mark other files for installation (e.g. launch and bag files, etc.)
-# install(FILES
-#   # myfile1
-#   # myfile2
-#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-# )
+install(DIRECTORY launch/
+        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+        PATTERN ".svn" EXCLUDE)
 
-#############
-## Testing ##
-#############
 
-## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_navigation.cpp)
-# if(TARGET ${PROJECT_NAME}-test)
-#   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
-# endif()
-
-## Add folders to be run by python nosetests
-# catkin_add_nosetests(test)

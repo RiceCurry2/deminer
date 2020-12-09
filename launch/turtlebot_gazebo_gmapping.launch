@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-
-<launch>
-  <include file="$(find turtlebot_gazebo)/launch/turtlebot_world.launch" />
-  <include file="$(find turtlebot_gazebo)/launch/gmapping_demo.launch" />
-  <include file="$(find turtlebot_navigation)/launch/includes/move_base.launch.xml" />
-  <node pkg="deminer" name="navigation_node" type="navigation_node" />
-  <node pkg="rviz" name="$(anon rviz)"  type="rviz" args="-d $(find deminer)/config/demining.rviz"/>
-</launch>
