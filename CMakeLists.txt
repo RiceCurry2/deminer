@@ -121,10 +121,15 @@ target_link_libraries(deminer_client ${catkin_LIBRARIES})
 add_executable(click src/click.cpp)
 target_link_libraries(click ${catkin_LIBRARIES})
 
+add_executable(create_mine src/create_mine.cpp)
+target_link_libraries(create_mine ${catkin_LIBRARIES})
+
+add_library(mine_layer src/mine_layer.cpp)
 
 #############
 ## Install ##
 #############
+
 
 # all install targets should use catkin DESTINATION variables
 
@@ -141,5 +146,3 @@ install(DIRECTORY include/${PROJECT_NAME}/
 install(DIRECTORY launch/
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
         PATTERN ".svn" EXCLUDE)
-
-

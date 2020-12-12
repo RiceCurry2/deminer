@@ -5,7 +5,7 @@
  <arg name="initial_pose_x" default="0.0"/> 
  <arg name="initial_pose_y" default="0.0"/> 
  <arg name="initial_pose_a" default="-2.0"/>
-  <include file="$(find deminer)/launch/custom_amcl.launch" >
+ <include file="$(find deminer)/launch/custom_amcl.launch" >
  <arg name="initial_pose_x" value="$(arg initial_pose_x)"/>
  <arg name="initial_pose_y" value="$(arg initial_pose_y)"/>
  <arg name="initial_pose_a" value="$(arg initial_pose_a)"/>
@@ -21,5 +21,7 @@
 <node name="rviz" pkg="rviz" type="rviz" args="-d $(find deminer)/rviz/_deminer_client.rviz"/>
 
 <node name= "deminer_client" type="deminer_client" pkg="deminer" output="screen" launch-prefix="gnome-terminal --command"/>
+
+<node name= "click" type="click" pkg="deminer" output="screen" launch-prefix="gnome-terminal --command"/>
 
 </launch>
