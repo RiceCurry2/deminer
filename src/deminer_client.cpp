@@ -260,241 +260,108 @@ private:
         pointline_pub.publish(line_strip);
     }
 
-    void rotation(float xGoal, float yGoal){
-
-    // find out which turndirection is better
-    // the bigger the angle, the bigger turn, - when clockwise
-    //turn = atan2(sin(angle_to_goal-theta), cos(angle_to_goal-theta))
-
-    //if abs(angle_to_goal - theta < 0.1){
-    //move_forward = True
-
-    }
-    // This was a test
-    // ................................................................................................................. 
-    // bool quaternionGoal();
-    //     //declare some variables
-    // tf::StampedTransform poseRobot;
-    // geometry_msgs::PoseStamped robot_pose;
-    // //initialize robot angle
-    // double yaw_r(50);
-    // //try what's between {}
-    // try
-    // {
-    //     ROS_DEBUG("Pose du robot ...");
-    //     // have the transform from /map to /base_link (robot frame) and put it in "poseRobot": this is the robot pose in /map!
-    //     listener.lookupTransform("/map","/base_link",ros::Time(0), poseRobot);
-
-    //     //get the orientation: it is a quaternion so don't worry about the z. It doesn't mean there is a 3D thing here!
-    //     robot_pose.pose.orientation.x = poseRobot.getRotation().getX();
-    //     robot_pose.pose.orientation.y = poseRobot.getRotation().getY();
-    //     robot_pose.pose.orientation.z = poseRobot.getRotation().getZ();
-    //     robot_pose.pose.orientation.w = poseRobot.getRotation().getW();
-
-    //     // convert the quaternion to an angle (the yaw of the robot in /map frame!)         
-    //     yaw_r = tf::getYaw(robot_pose.pose.orientation);  
-    // }
-    // catch(tf::TransformException &ex) //if the try doesn't succeed, you fall here!
-    // {
-    //     // continue
-    //     ROS_INFO("error. no robot pose!");
-    // }
-
-    //         //angleDes is the goal angle in /map frame you get it by subscribing to goal 
-    //         //The angleDes you should get it in a call back normally by converting the goals orientation to a yaw. Exactly as we have done to get robot's yaw
-
-    //         //delta_yaw is what you want to get
-    //         double delta_yaw = angleDes - yaw_r;
-    //         //and here I just make sure my angle is between minus pi and pi!
-    // if (delta_yaw > M_PI)
-    //         delta_yaw -= 2*M_PI;
-    // if (delta_yaw <= -M_PI)
-    //         delta_yaw += 2*M_PI;
-    // ...................................................................................................................
-    
+    /*********************************************************************************************
+     * @brief                   moveToGoal method handles the action client side which sends move-
+     *                          ment goal and rotation goal at the same time                      
+     *********************************************************************************************/
     bool moveToGoal(float xGoal, float yGoal, float next_xGoal, float next_yGoal)
     {
-        // wait for the action server to come up
+        // Wait for the action server to come up
         while (!mb_client.waitForServer(ros::Duration(5.0)))
         {
         ROS_INFO("Waiting for the move_base action server to come up");
         }
+        
+        // Define parameters used in moveToGoal method
+        double dx;                  // Distance x values
+        double dy;                  // Distance y values
+        double theta;               // Theta is the radian
 
-        double dx;
-        double dy;
-
-        // define the angle_to_goal and theta parameter
-        double angle_to_goal;
-        double theta; // theta is the angle (maybe not used/maybe angle_to_goal)
-
-        // setup frame parameters
+        // Setup frame parameters
         goal.target_pose.header.frame_id = "map";
         goal.target_pose.header.stamp = ros::Time::now();
 
-        //------------------------------------------------------------------------------------------------------------------
-        // Rotation to goal, quaternion from yaw via degrees and radians.
-        ros::spinOnce;
-        ros::Duration(1).sleep();
+            // find out which turndirection is better
+            // the bigger the angle, the bigger turn, - when clockwise
+            //turn = atan2(sin(angle_to_goal-theta), cos(angle_to_goal-theta))
+
+            //if abs(angle_to_goal - theta < 0.1){
+            //move_forward = True
+        
+        // Rotation to goal, quaternion from yaw via radians (Euler angles).
+
+        ros::spinOnce;               // Process callbacks
+        ros::Duration(1).sleep();    // Sleep for 1hz
 
         double X = qX;               // Robot X postition
         double Y = qY;               // Robot Y postition
         double Yaw = qYaw;           // Robot Yaw
 
-        dx = next_xGoal - xGoal;                                     //distance robot to goal in x
-        dy = next_xGoal - yGoal;                                     //distance robot to goal in y
-        theta = atan2(dy, dx);                                       //calculate angle through distance from robot to goal in x and y
+        dx = next_xGoal - xGoal;     // Distance goal to next goal in x
+        dy = next_xGoal - yGoal;     // Distance goal to next goal in y
+        theta = atan2(dy, dx);       // Calculate angle through distance from goal to next goal in x and y
 
-        std::cout << "Angle to turn: " << theta*180/M_PI << std::endl;
+        // Console output angle and radians
+        std::cout << "Angle to turn: " << theta*180/M_PI << std::endl;             // Convert to degress for the console output  
+        std::cout << "Rads: " << theta << std::endl;                               // Display radians
 
-        //float theta = 90.0;                                        // Degrees
-        //double radians = theta * (M_PI/180);                       // Degrees to radians
-
-        std::cout << "Rads: " << theta << std::endl;
-        std::cout << "------" << std::endl;
-
-        //tf::Quaternion quaternion;                          // Namespace definition (maybe move to global)
-        //quaternion = tf::createQuaternionFromYaw(radians);  // Radians to quarternion 
-        //geometry_msgs::Quaternion qMsg;                     // Define quarternion msg (x, y, z, w)
-        //tf::quaternionTFToMsg(quaternion, qMsg);            // Store in the msg (represents orientation in free space)
-        //std::cout << qMsg << std::endl;
-        //goal.target_pose.pose.orientation = qMsg;           // Set target pose to the quartonion oriented towards the goal
-        //-------------------------------------------------------------------------------------------------------------------
-
-
-        /* moving towards the goal*/
-        goal.target_pose.pose.position.x = xGoal;
-        goal.target_pose.pose.position.y = yGoal;
-        goal.target_pose.pose.position.z = 0.0;
-        goal.target_pose.pose.orientation = tf::createQuaternionMsgFromYaw(theta);           // Set target pose to the quartonion oriented towards the goal
-
-
-
+        // Moving towards the goal and rotating to oriention of next goal
+        goal.target_pose.pose.position.x = xGoal;                                  // Set x pose position to current goal
+        goal.target_pose.pose.position.y = yGoal;                                  // Set y pose position to current goal
+        goal.target_pose.pose.position.z = 0.0;                                    // Set z pose position to 0
+        goal.target_pose.pose.orientation = tf::createQuaternionMsgFromYaw(theta); // Set target pose to the quaternion oriented towards the goal
     
         ROS_INFO("Sending goal location ...");
-        mb_client.sendGoal(goal);
+        mb_client.sendGoal(goal);    // Send calculated goal to the actionserver
 
-        mb_client.waitForResult();
+        mb_client.waitForResult();   // Wait for result from the actionserver
 
+        // If statement to handle the return of waitForResult function
         if (mb_client.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
         {
             ROS_INFO("You have reached the destination");
-            return true;
+            return true;             // True indicates that the goal was reached
         }
         else
         {
             ROS_INFO("The robot failed to reach the destination");
-            return false;
+            return false;            // False indicates that this goal failed -> moving to next goal
         }
     }
-    // This method recieves the goal that it has already reached to reached it again with a calculated orientation.
-    bool rotateOnGoal(float xGoal, float yGoal, float next_xGoal, float next_yGoal){
-
-        // wait for the action server to come up
-        while (!mb_client.waitForServer(ros::Duration(5.0)))
-        {
-        ROS_INFO("Waiting for the move_base action server to come up");
-        }
-        // define temporary dx and dy parameters
-        double dx;
-        double dy;
-
-        // define the angle_to_goal and theta parameter
-        double angle_to_goal;
-        double theta; // theta is the angle (maybe not used/maybe angle_to_goal)
-
-        // setup frame parameters
-        goal.target_pose.header.frame_id = "map";
-        goal.target_pose.header.stamp = ros::Time::now();
-
-        //------------------------------------------------------------------------------------------------------------------
-        // Rotation to goal, quaternion from yaw via degrees and radians.
-        ros::spinOnce;
-        ros::Duration(1).sleep();
-
-        double X = qX;               // Robot X postition
-        double Y = qY;               // Robot Y postition
-        double Yaw = qYaw;           // Robot Yaw
-
-        dx = xGoal - next_xGoal;                                     //distance robot to goal in x
-        dy = yGoal - next_xGoal;                                     //distance robot to goal in y
-        theta = atan2(dy, dx);                                       //calculate angle through distance from robot to goal in x and y
-
-        std::cout << "Angle to turn: " << theta << std::endl;
-
-        //float theta = 90.0;                                        // Degrees
-        double radians = theta * (M_PI/180);                         // Degrees to radians
-
-        std::cout << radians << std::endl;
-        std::cout << "------" << std::endl;
-
-        //tf::Quaternion quaternion;                          // Namespace definition (maybe move to global)
-        //quaternion = tf::createQuaternionFromYaw(radians);  // Radians to quarternion 
-        //geometry_msgs::Quaternion qMsg;                     // Define quarternion msg (x, y, z, w)
-        //tf::quaternionTFToMsg(quaternion, qMsg);            // Store in the msg (represents orientation in free space)
-        //std::cout << qMsg << std::endl;
-        //goal.target_pose.pose.orientation = qMsg;         // Set target pose to the quartonion oriented towards the goal
-        //-------------------------------------------------------------------------------------------------------------------
-
-        goal.target_pose.pose.orientation = tf::createQuaternionMsgFromYaw(radians);           // Set target pose to the quartonion oriented towards the goal
-
-        goal.target_pose.pose.position.x = qX;
-        goal.target_pose.pose.position.y = qY;
-        goal.target_pose.pose.position.z = qZ;
-
-        // OR ELSE TRY
-
-        // // goal.target_pose.pose.position.x = X; // this, robot pose
-        // // goal.target_pose.pose.position.y = Y; // this, robot pose
-        //goal.target_pose.pose.position.z = 0.0;
-
-        //goal.target_pose.pose.orientation.x = 0.0;
-        //goal.target_pose.pose.orientation.y = 0.0;
-        //goal.target_pose.pose.orientation.z = 0.0;
-        //goal.target_pose.pose.orientation.w = 1.0;
-
     
-        ROS_INFO("Sending rotation ...");
-        mb_client.sendGoal(goal);
+    /*********************************************************************************************
+     * @brief                   Publishes the final goals to rVIZ calculated to the goal_vec vector
+     *                          which resides in the polyReciever method                     
+     *********************************************************************************************/
+        void goalpoints_marker(){
 
-        mb_client.waitForResult();
+        float f = 0.0;                                              // Float definition
 
-        if (mb_client.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
-        {
-            ROS_INFO("The robot has reached the correct orientation");
-            return true;
-        }
-        else
-        {
-            ROS_INFO("The robot failed to reach the correct orientation");
-            return false;
-        }
-    }
+        visualization_msgs::Marker points;                          // Marker type definition
 
-            void goalpoints_marker(){
+        points.header = _poly.header;                               // Header defintion
+        points.ns = "goal_points";                                  // Namespace definition
 
-            float f = 0.0;
+            points.id = 2;                                          // Marker ID (unique)
 
-            visualization_msgs::Marker points;
+        points.type = visualization_msgs::Marker::SPHERE_LIST       // Type of marker
 
-            points.header = _poly.header;
-            points.ns = "goal_points";
-
-                points.id = 2;
-
-            points.type = visualization_msgs::Marker::SPHERE_LIST;
-
+            // If goal vector is not empty
             if(!goal_vec.empty()){
 
-            geometry_msgs::Point p;
+            geometry_msgs::Point p;                                 // Point type definition
 
+            // Iterate each position of goal vector
+            // Convert this to a ROS float64 point and push to visualization_msgs point vector
             for (int i = 0; i < goal_vec.size(); i++)
             {
                 p.x = goal_vec.at(i).x;
                 p.y = goal_vec.at(i).y;
-        
+
                 points.points.push_back(p);
             }
 
+            
             points.action = visualization_msgs::Marker::ADD;
 
             // DER MANGLER Marker::DELETE Statement ....
@@ -508,7 +375,7 @@ private:
 
             pointline_pub.publish(points);
             }
-            return;
+        return;
         }
     
 
