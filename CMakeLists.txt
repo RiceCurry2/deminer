@@ -124,8 +124,6 @@ target_link_libraries(click ${catkin_LIBRARIES})
 add_executable(create_mine src/create_mine.cpp)
 target_link_libraries(create_mine ${catkin_LIBRARIES})
 
-add_library(mine_layer src/mine_layer.cpp)
-
 #############
 ## Install ##
 #############

@@ -234,11 +234,9 @@ private:
         points.points.push_back(costmap_2d::toPoint(point));
         }
 
-        // ------------------------------------------------ BREAK POINT FOR COMMENTING: CONTINUE HERE (KMH) -----------------------------------------------------------------------
         if(awaiting_center){
             line_strip.points.push_back(costmap_2d::toPoint(_poly.polygon.points.front()));
             // RED Color (Points and lines)
-            //OLD//points.color.a = points.color.r = line_strip.color.r = line_strip.color.a = 1.0;
             points.color.r = 1.0;
             points.color.a = 1.0;
             line_strip.color.r = 1.0;
@@ -246,7 +244,6 @@ private:
 
         }else{
             // GREEN Color (Points and lines)
-            //OLD//points.color.a = points.color.b = line_strip.color.b = line_strip.color.a = 1.0; 
             points.color.g = 1.0f;
             points.color.a = 1.0;
             line_strip.color.g = 1.0f;
@@ -344,7 +341,7 @@ private:
 
             points.id = 2;                                          // Marker ID (unique)
 
-        points.type = visualization_msgs::Marker::SPHERE_LIST       // Type of marker
+        points.type = visualization_msgs::Marker::SPHERE_LIST;      // Type of marker
 
             // If goal vector is not empty
             if(!goal_vec.empty()){
@@ -362,18 +359,19 @@ private:
             }
 
             
-            points.action = visualization_msgs::Marker::ADD;
+            points.action = visualization_msgs::Marker::ADD;        // Setting the action to ADD for the publish message
 
             // DER MANGLER Marker::DELETE Statement ....
-
+            
+            // Defining the color of the goal points (green)
             points.color.g = 1.0f;
             points.color.a = 1.0;
 
-            points.pose.orientation.w = 1.0;
+            points.pose.orientation.w = 1.0;                        // Defining orientation of points
 
-            points.scale.x = points.scale.y = 0.1;
+            points.scale.x = points.scale.y = 0.1;                  // Scaling points for a smaller size
 
-            pointline_pub.publish(points);
+            pointline_pub.publish(points);                          // Publish the points to rVIZ
             }
         return;
         }
@@ -393,14 +391,7 @@ private:
             if(!pointInPolygon(point->point,_poly.polygon)){
             ROS_ERROR("Starting point is not inside polygon, restarting");
         }else{
-            //actionlib::SimpleActionClient<deminer::SearchTaskAction> exploreClient("explore_server", true);
-            //exploreClient.waitForServer();
-            //ROS_INFO("Sending goal");
-            //frontier_exploration::ExploreTaskGoal goal;
-            //goal.explore_center = *point;
-            //goal.explore_boundary = input_;
-            //exploreClient.sendGoal(goal);
-            // Creating new item "temp" in struct
+
             coor2d xy_temp;
             minmax mm_temp;
             s_goal goal_temp;
@@ -457,7 +448,7 @@ private:
                 // The parametric equation for a line:
                 // x = x1 + t * dx
                 // y = y1 + t * dy 
-                // ------------------------------------------------------------------------------------------------------
+
                             // Point2        // Point1 
                 double dx = (vec.at(1).x1) - (vec.at(0).x1);
                 double dy = (vec.at(1).y1) - (vec.at(0).y1);
@@ -475,7 +466,7 @@ private:
                     goal_vec_top.push_back(goal_temp);
                 }
 
-                            // Point2        // Point1 
+                      // Point2        // Point1 
                 dx = (vec.at(2).x1) - (vec.at(3).x1);
                 dy = (vec.at(2).y1) - (vec.at(3).y1);
                 dist = sqrt(dx*dx + dy*dy);
@@ -600,170 +591,22 @@ private:
                     DeminerClient::playSound(2,_sc);
                     ros::spinOnce();
 
-                        // if(goalReached && i > 0){
-
-                        // std::cout << "Sending rotation goal to following coordinates: ";
-                        
-                        // std::cout << goal_vec.at(i).x << ", ";
-
-                        // std::cout << goal_vec.at(i).y << std::endl;
-
-                        // rotationComplete = rotateOnGoal(goal_vec.at(i).x, goal_vec.at(i).y, goal_vec.at(i+1).x, goal_vec.at(i+1).y);
-                        // ROS_INFO("start rotating");
-                        // ros::spinOnce();
-                    
-                        // if (rotationComplete)
-                        // {
-                        // ROS_INFO("The rotation was a success");
-                        // DeminerClient::playSound(2,_sc);
-                        // ros::spinOnce();
-                        // // ros::spinOnce();
-                        // }else{
-                        // ROS_INFO("Rotation goal failed!");
-                        // DeminerClient::playSound(3,_sc);
-                        // }
-                        // }
                 }else{
                     ROS_INFO("Movement and rotation goal failed!");
                     DeminerClient::playSound(3,_sc);
                 }
                 }
             }
-
+        }
             ROS_INFO("Goal list is empty, beginning cleanup..");
-            //goal_vec_top.clear();
-            //goal_vec_bot.clear();
-            //goal_vec.clear();
+            awaiting_center = false;
             sortingdone = false;
 
-                //std::cout << vec.at(1).x1 << " - " << vec.at(0).x1 << " = " << dx << std::endl;
-                //std::cout << vec.at(1).y1 << " - " << vec.at(0).y1 << " = " << dy << std::endl;
-                //std::cout << " " << std::endl;
-                //std::cout << "Performed calculations: " << std::endl;
+            goal_vec_top.clear();
+            goal_vec_bot.clear();
+            goal_vec.clear();
+            _poly.polygon.points.clear();
 
-                //std::cout << xy_temp.x1 << ", " << xy_temp.y1 << std::endl;
-
-
-            // Vector sorts for min/max
-            // --------------------------------------------------------------------------
-            // // // // Call sort funcion (sorting for lowest x pt)
-            // // // // Thus..   vec.at(3) = highest X
-            // // // //          vec.at(0) = lowest X
-            // // // std::sort(vec.begin(), vec.end(), compare_xy());
-            // // // std::cout << std::endl;
-
-            // // //     // Load max/min variables into vector via temp struct
-            // // //     mm_temp.min_x = vec.at(0).x;
-            // // //     mm_temp.max_x = vec.at(3).x;
-
-            // // //     //Maybe not used: v_minmax.push_back(mm_temp);
-
-            // // // std::cout << " " << std::endl;
-            // // // std::cout << "v_ " << std::endl;
-
-            // // // std::cout << " " << std::endl;
-            // // // std::cout << "Sorted vector points XY: " << std::endl;
-            
-            // // // for (int i=0; i<vec.size(); i++) 
-            // // // { 
-            // // //      // console out vector at current state (pro-sort)
-            // // //      // 
-            // // //      std::cout << vec.at(i).x << ",  ";
-            // // //      std::cout << vec.at(i).y << std::endl;
-            // // // }
-
-            // // // // Call sort funcion (sorting for lowest y pt)
-            // // // // Thus..   vec.at(3) = highest Y
-            // // // //          vec.at(0) = lowest Y
-            // // // std::sort(vec.begin(), vec.end(), compare_yx());
-            // // // std::cout << std::endl;
-
-            // // //     // Load max/min variables into vector via temp struct
-            // // //     mm_temp.min_y = vec.at(0).y;
-            // // //     mm_temp.max_y = vec.at(3).y;
-
-            // // //     //Maybe not used: v_minmax.push_back(mm_temp);
-
-
-            // // // std::cout << "Sorted vector points YX: " << std::endl;
-            
-            // // // for (int i=0; i<vec.size(); i++) 
-            // // // { 
-            // // //      // console out vector at current state (pro-sort)
-            // // //      // 
-            // // //      std::cout << vec.at(i).x << ",  ";
-            // // //      std::cout << vec.at(i).y << std::endl;
-            // // // }
-         
-            // // //     std::cout << " " << std::endl;
-            // // //      // Print min singular points
-            // // //     std::cout << "min x: " << mm_temp.min_x << ",  ";
-            // // //     std::cout << "min y: " << mm_temp.min_y << std::endl;
-
-            // // //      // Print max singular points
-            // // //     std::cout << "max x: " << mm_temp.max_x << ",  ";
-            // // //     std::cout << "max y: " << mm_temp.max_y << std::endl;
-
-            // // //     //vec.clear();
-            // // //     //ROS_INFO("Sorting vector has been cleared");
-
-            // // //     //min x: -0.490582,  min y: -1.0317
-            // // //     //max x: 2.18035,  max y: 1.527
-
-                // MIN/MAX (Maybe not used)
-                //-------------------------------------------------------------------------------------------------------
-                // // float px = fabsf(mm_temp.min_x);
-                // // float py = fabsf(mm_temp.min_y);
-                // // std::cout << "Count to plus: " << px << ", " << py << std::endl;
-
-                // // float sum = 0;
-
-                // // sum = px + mm_temp.max_x;
-                // // std::cout << "low + high: " << px << " + " << mm_temp.max_x << " = " << sum <<  std::endl;
-                // // int cx = std::round(sum / 0.30f);
-                // // std::cout << "x count: " << cx << std::endl;
-
-                // // sum = py + mm_temp.max_y;
-                // // std::cout << "low + high: " << py << " + " << mm_temp.max_y << " = " << sum <<  std::endl;
-                // // int cy = std::round(sum / 0.30f);
-                // // std::cout << "y count: " << cy << std::endl;
-                //-------------------------------------------------------------------------------------------------------
-
-                // if (cy < cx)
-                // {
-                //     vec.reserve(cx*2);
-                //     std::cout << "Reserved " << cx*2 << " in vector" << std::endl;
-
-                // }else if (cy >= cx){
-
-                //     vec.reserve(cy*2);
-                //     std::cout << "Reserved " << cy*2 << " in vector" << std::endl;
-
-                // }
-
-                // for (int i=0; i<cx; i++)
-                // {
-                // xy_temp.x += mm_temp.min_x + robot_width;
-                // std::cout << i << " " << mm_temp.min_x << " + " << robot_width << " = " << xy_temp.x << std::endl;
-                // vec.push_back(xy_temp);
-                // }
-
-                // for (int i=0; i<cy; i++)
-                // {
-                // xy_temp.y += mm_temp.min_y + robot_width;
-                // std::cout << i << " " << mm_temp.min_y << " + " << robot_width << " = " << xy_temp.y << std::endl;
-                // vec.push_back(xy_temp);
-                // }
-
-                // for (int i=0; i<vec.size(); i++) 
-                // { 
-                //     std::cout << vec.at(i).x << ",  ";
-                //     std::cout << vec.at(i).y << std::endl;
-                // }
-        }
-            awaiting_center = false;
-
-            //Maybe not used: v_minmax.clear();
             
     
         }else if(_poly.polygon.points.empty()){

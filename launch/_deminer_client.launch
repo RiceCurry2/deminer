@@ -22,6 +22,6 @@
 
 <node name= "deminer_client" type="deminer_client" pkg="deminer" output="screen" launch-prefix="gnome-terminal --command"/>
 
-<node name= "click" type="click" pkg="deminer" output="screen" launch-prefix="gnome-terminal --command"/>
+<node name= "create_mine" type="create_mine" pkg="deminer" output="screen" launch-prefix="gnome-terminal --command"/>
 
 </launch>

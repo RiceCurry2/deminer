@@ -1,8 +1,10 @@
 #include "ros/ros.h"
 #include <geometry_msgs/Point.h>
+#include <geometry_msgs/PointStamped.h> // For testing
+#include <geometry_msgs/PolygonStamped.h> // For testing
 
+#include <visualization_msgs/Marker.h>
 #include <ros/console.h>
-
 #include <pluginlib/class_list_macros.h>
 
 
@@ -14,7 +16,10 @@ namespace create_mine {
 	ros::NodeHandle n_;
 	ros::Publisher pub_point;
 	ros::Publisher pub_settings;
+    ros::Publisher pub_markers;
     ros::Subscriber sub_mine;
+
+    geometry_msgs::PolygonStamped _poly;
     geometry_msgs::Point point_;
     geometry_msgs::Point settings_;
 	
@@ -22,6 +27,7 @@ namespace create_mine {
     bool remove_all_;
     bool size_property_;
     float mine_size_;
+
 
     struct s_mine
     {
@@ -33,79 +39,108 @@ namespace create_mine {
 
     std::vector<s_mine> minevector;
 
-    void publishMine(geometry_msgs::Point p){
+    void mine_markers(){
 
-            if (operation_=false){
-            operation_=true;
+    float f = 0.0;                                                  // Float definition
 
-            s_mine m; 
+    visualization_msgs::Marker points;                              // Marker type definition
 
-            m.x = p.x; 
-            m.y = p.y;
-            m.z = p.z; 
+    points.header.frame_id = "map";
+    points.header.stamp = ros::Time();
+    points.ns = "mine_detected";                                    // Namespace definition
 
-            minevector.push_back(m);
+            points.id = 3;                                          // Marker ID (unique)
 
-            point_.x = p.x; 
-            point_.y = p.y;
-            point_.z = p.z;
+        points.type = visualization_msgs::Marker::SPHERE_LIST;             // Type of marker
 
-            pub_point.publish(point_);
-            pub_settings.publish(settings_);
+            // If goal vector is not empty
+            if(!minevector.empty()){
 
-            ROS_INFO("Mine location published and saved to vector");
+            geometry_msgs::Point p;                                 // Point type definition
+
+            // Iterate each position of goal vector
+            // Convert this to a ROS float64 point and push to visualization_msgs point vector
+            for (int i = 0; i < minevector.size(); i++)
+            {
+                p.x = minevector.at(i).x;
+                p.y = minevector.at(i).y;
+
+                points.points.push_back(p);
+            }
+
+            
+            points.action = visualization_msgs::Marker::ADD;        // Setting the action to ADD for the publish message
+
+            // DER MANGLER Marker::DELETE Statement ....
+            
+            // Defining the color of the goal points (green)
+            points.color.r = 1.0;
+            points.color.a = 1.0;
+
+            points.pose.orientation.w = 1.0;                        // Defining orientation of points
+
+            points.scale.x = points.scale.y = 0.2;                  // Scaling points for a smaller size
+
+            pub_markers.publish(points);                            // Publish the points to rVIZ
+            }
+        return;
+        }
+
+    void publishMine(const geometry_msgs::PointStampedConstPtr& point){
+
+            ros::Rate publish_rate(20);
+
+            if (operation_){
 
             operation_=false;
 
+            settings_.x = 1;
+            settings_.y = false; //clear
+            settings_.z = 1; //color
 
-            return;
-            }else{
-            ROS_INFO("Awaiting mine location");
+            s_mine m; 
+
+            m.x = -0.78333;
+            m.y = 2.16096;
+            m.z = 1;
+
+            minevector.push_back(m);
+
+            point_.x = m.x;
+            point_.y = m.y;
+            point_.z = operation_;
+            pub_settings.publish(settings_);
+            pub_point.publish(point_);
+
+            publish_rate.sleep();
+
             ros::spinOnce;
-            }
-            
-    }
 
-void updateTopic(int a)
-{
-    // Switch statement to handle the sound files
-    switch(a)
-    {
-    case 0:
-        settings_.x = mine_size_;
-        settings_.y = true;                   //clear
-        settings_.z = 1;                      //color
-        return;
-    case 1:
-        settings_.x = mine_size_;
-        settings_.y = false; //clear
-        settings_.z = 1;                      //color
-        return;
-    case 2:
-        mine_size_ = 2;
-        return;
-    case 3:
-        mine_size_ = 4;
-        return;
-    default:
-        ROS_ERROR("Error: The updateTopic recieved an undefined number");
-    }
-    return;
-}
+            mine_markers();
 
+            ROS_INFO("Mine location published and saved to vector");
+
+
+            operation_=true;
+
+            //}else{
+            //ROS_INFO("Awaiting mine location");
+            //ros::spinOnce;
+
+        return;
+        }     
+    }
             
     public:
     Flag() :
     n_(),
-    operation_(false)
+    operation_(true)
     {
-    
 
-    pub_point = n_.advertise<geometry_msgs::Point>("/mine_location",1);
-
-    pub_settings = n_.advertise<geometry_msgs::Point>("/mine_settings",1);
-
-    sub_mine = n_.subscribe<geometry_msgs::Point>("/mine_publish",1, &Flag::publishMine, this);
+    pub_point = n_.advertise<geometry_msgs::Point>("/detected_mine",10);
+    pub_settings = n_.advertise<geometry_msgs::Point>("/restrict_settings",10);
+    pub_markers = n_.advertise<visualization_msgs::Marker>("mine_markers", 10);
+    sub_mine = n_.subscribe("/clicked_point",1, &Flag::publishMine, this);
     }
     
     ~Flag() {}
@@ -117,6 +152,8 @@ int main(int argc, char** argv)
     ros::init(argc, argv, "create_mine");
 
     create_mine::Flag flagger;
+
+    std::cout << "create mine interface" << std::endl;
 
     ros::spin();
     
