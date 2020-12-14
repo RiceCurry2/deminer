@@ -22,8 +22,7 @@ alt="ROS: Goal definition " width="350" height="200" border="10" /></a>
 ## Further implementation:
 * Add implementation of metal_detector
 
-* create_mine.cpp has been added (dependent on RestrictAreaPlugin)
-  This might become the deminer_server
+* create_mine.cpp has been added (dependent on RestrictAreaPlugin) {This might become the deminer_server.cpp}
 
 
 
@@ -39,6 +38,11 @@ alt="ROS: Goal definition " width="350" height="200" border="10" /></a>
 
     Other ros packages:
     soundplay
+
+    Plugins:
+    RestrictAreaPlugin (Modified) https://github.com/RiceCurry2/RestrictAreaPlugin.git
+
+
 
 
 
