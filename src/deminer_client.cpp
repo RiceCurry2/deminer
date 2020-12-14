@@ -387,17 +387,21 @@ private:
     double average_distance = polygonPerimeter(_poly.polygon) / _poly.polygon.points.size();
 
     if(awaiting_center){
-        //Flag is set so that this is the last point of the boundary polygon
+            //Flag is set so that this is the last point of the boundary polygon
+
+            // Check if the last point is inside the polygon
             if(!pointInPolygon(point->point,_poly.polygon)){
             ROS_ERROR("Starting point is not inside polygon, restarting");
         }else{
-
+            
+            // Defining items of structs for vector pushbacks
             coor2d xy_temp;
             minmax mm_temp;
             s_goal goal_temp;
             s_goal goal_temp2;
 
-                for (int i=0; i<_poly.polygon.points.size(); i++) 
+            // Print out the polygon points
+            for (int i=0; i<_poly.polygon.points.size(); i++) 
             { 
                  // console out vector at current state (pre-sort)
                  std::cout << _poly.polygon.points.at(i).x << ", ";
@@ -406,6 +410,7 @@ private:
 
             std::cout << "-------------------------------------------------" << std::endl;
 
+            // Add the polygon points to a vector via the struct item.
             for (int i = 0; i < _poly.polygon.points.size(); i++)
             {
                 xy_temp.x1 = _poly.polygon.points.at(i).x;
@@ -414,50 +419,57 @@ private:
                 vec.push_back(xy_temp);
             }
 
+            // Print out the amount of elements
             std::cout << "vector elements: " << vec.size() << std::endl;
             
             std::cout << "  " << std::endl;
 
+            
             std::cout << "Local vector points: " << std::endl;
             
+            // Print out the vector points from the local vector
             for (int i=0; i<vec.size(); i++) 
             { 
-                 // console out vector at current state (pre-sort)
+                // console out vector at current state (pre-sort)
                  std::cout << vec.at(i).x1 << ", ";
                  std::cout << vec.at(i).y1 << std::endl;
             }
-                xy_temp.x1 = vec.at(0).x1;
-                xy_temp.y1 = vec.at(0).y1;
-                xy_temp.x2 = vec.at(1).x1;
-                xy_temp.y2 = vec.at(1).y1;
-                float distance0_1 = xy_temp.distance_p1_p2();
-                int steps0_1 = std::round(distance0_1 / 0.30f);
 
-                xy_temp.x1 = vec.at(2).x1;
-                xy_temp.y1 = vec.at(2).y1;
-                xy_temp.x2 = vec.at(3).x1;
-                xy_temp.y2 = vec.at(3).y1;
-                float distance2_3 = xy_temp.distance_p1_p2();
-                int steps2_3 = std::round(distance2_3 / 0.30f);
+                // Distance calculation of the top line
+                xy_temp.x1 = vec.at(0).x1;                      // Point1.x
+                xy_temp.y1 = vec.at(0).y1;                      // Point1.y
+                xy_temp.x2 = vec.at(1).x1;                      // Point2.x
+                xy_temp.y2 = vec.at(1).y1;                      // Point2.y
+                float distance0_1 = xy_temp.distance_p1_p2();   // Calling distance function within the struct
+                int steps0_1 = std::round(distance0_1 / 0.30f); // Calculating amount of steps in the given distance from robot width
 
+                // Distance calculation of the bottom line
+                xy_temp.x1 = vec.at(2).x1;                      // Point3.x
+                xy_temp.y1 = vec.at(2).y1;                      // Point3.y
+                xy_temp.x2 = vec.at(3).x1;                      // Point4.x
+                xy_temp.y2 = vec.at(3).y1;                      // Point4.y
+                float distance2_3 = xy_temp.distance_p1_p2();   // Calling distance function within the struct
+                int steps2_3 = std::round(distance2_3 / 0.30f); // Calculating amount of steps in the given distance from robot width
+
+                // Print out amount of points on the lines
                 std::cout << "Steps 1: " << steps0_1 << " " << std::endl;
                 std::cout << "Steps 2: " << steps2_3 << " " << std::endl;
-
+                
+                // Print out distances
                 std::cout << "Distance 1: " << distance0_1 << " Distance 2: " << distance2_3 << std::endl;                
 
-                // The parametric equation for a line:
+                // The parametric equation for a line is used to calculate each coordinate on the line:
                 // x = x1 + t * dx
                 // y = y1 + t * dy 
 
                             // Point2        // Point1 
-                double dx = (vec.at(1).x1) - (vec.at(0).x1);
-                double dy = (vec.at(1).y1) - (vec.at(0).y1);
-                double dist = sqrt(dx*dx + dy*dy);
-                dx /= dist;
-                dy /= dist;
+                double dx = (vec.at(1).x1) - (vec.at(0).x1);        // Point2 minus point1 for x
+                double dy = (vec.at(1).y1) - (vec.at(0).y1);        // Point2 minus point1 for y
+                double dist = sqrt(dx*dx + dy*dy);                  // Distance equation
+                dx /= dist;                                         // dx divided by distance
+                dy /= dist;                                         // dy divided by distance
 
-                // Points from line0_1
-                // first goal_vec.at(0) is the point which begins at point(0-3) 1 in the polygon
+                // Calculation of points on line 1 (top line)
                 for (int i = 0; i < steps0_1; i++)
                 {
                 goal_temp.x = vec.at(1).x1 + -robot_width*i * dx;
@@ -467,14 +479,13 @@ private:
                 }
 
                       // Point2        // Point1 
-                dx = (vec.at(2).x1) - (vec.at(3).x1);
-                dy = (vec.at(2).y1) - (vec.at(3).y1);
-                dist = sqrt(dx*dx + dy*dy);
-                dx /= dist;
-                dy /= dist;
+                dx = (vec.at(2).x1) - (vec.at(3).x1);               // Point3 minus point4 for x
+                dy = (vec.at(2).y1) - (vec.at(3).y1);               // Point3 minus point4 for y
+                dist = sqrt(dx*dx + dy*dy);                         // Distance equation   
+                dx /= dist;                                         // dx divided by distance
+                dy /= dist;                                         // dy divided by distance
 
-                // Points from line2_3
-                // first goal_vec.at(dependent on steps0_1) is the point which begins at point(0-3) 3 in the polygon
+                // Calculation of points on line 1 (top line)
                 for (int i = 0; i < steps2_3; i++)
                 {
                 goal_temp.x = vec.at(2).x1 + -robot_width*i * dx;
@@ -483,23 +494,24 @@ private:
                     goal_vec_bot.push_back(goal_temp);                
                 }
 
+                // Print out top points
                 std::cout << "TOP POINTS" << std::endl;
                 for (int i=0; i<goal_vec_top.size(); i++) 
             { 
-                 // console out vector at current state (pre-sort)
                  std::cout << goal_vec_top.at(i).x << ", ";
                  std::cout << goal_vec_top.at(i).y << std::endl;
             }
-
+                // Print out bottom points
                 std::cout << " " << std::endl;
-                std::cout << "BOT POINTS" << std::endl;
+                std::cout << "BOTTOM POINTS" << std::endl;
                 for (int i=0; i<goal_vec_bot.size(); i++) 
             { 
-                // console out vector at current state (pre-sort)
                 std::cout << goal_vec_bot.at(i).x << ", ";
                 std::cout << goal_vec_bot.at(i).y << std::endl;
             }
 
+            // Check if there is points in the top and bottom vector
+            // If there is, begin sorting the into the goal_vec which acts a the final route vector
             if (!goal_vec_top.empty() && !goal_vec_bot.empty()){
 
                 auto v1 = goal_vec_top.begin ();
@@ -541,50 +553,52 @@ private:
                     }
                 }
             }
-
-            _poly.polygon.points.clear();
+            // Clear points from the PolygonStamped topic from rVIZ
+            _poly.polygon.points.clear();       
 
             ROS_INFO("Clearing polygon vector and initializing goal point marker");
 
+            // Sleep for .2 hz
             ros::Duration(0.2).sleep();
-
+            
+            // Function to mark the goals in rVIZ
             goalpoints_marker();
 
+            // Process topics
             ros::spinOnce();
 
             //sleep added for the purpose of making a video (need to get to the camera)
             ros::Duration(8).sleep();
 
-            donewaypoint = true;
-            sortingdone = true;
+            donewaypoint = true;        // Keeps track of the sendgoal state
+            sortingdone = true;         // Lets the algorithm know, that sorting has been processed
 
+            // While loop for executing the goals
             while (sortingdone = true)
             {
+                // If false, process topics until waypoint is reached
                 if (donewaypoint == false )
                 {
-                    ros::spinOnce();
+                    ros::spinOnce();    
                 }
+                // If true, send the next goal to the actionserver
                 if (donewaypoint == true)
                     for (int i=0; i<=goal_vec.size(); i++) 
                     {
-                    // console out vector at current state (pre-sort)
+                    // Console out movement goal plus next goal
                     std::cout << "Sending movement goal to following coordinates: ";
-                    
                     std::cout << goal_vec.at(i).x << ", ";
-
                     std::cout << goal_vec.at(i).y << std::endl;
-
                     std::cout << "Next goal is: ";
-
                     std::cout << goal_vec.at(i+1).x << ", ";
-
                     std::cout << goal_vec.at(i+1).y << std::endl;
 
-
+                    // Boolean function which lets the algorithm know when the goal has been reached
                     goalReached = moveToGoal(goal_vec.at(i).x, goal_vec.at(i).y, goal_vec.at(i+1).x, goal_vec.at(i+1).y);
-                    ROS_INFO("start moving");
+                    ROS_INFO("Start moving");
                     ros::spinOnce();
-                
+
+                // goalReached statement to process the visual and audio feedback
                 if (goalReached)
                 {
                     ROS_INFO("Congratulations![%f, %f]", goal_vec.at(i).x, goal_vec.at(i).y);
@@ -598,10 +612,14 @@ private:
                 }
             }
         }
+            // At this point the goal list is empty, and cleanup of vectors and boolean statements begin
             ROS_INFO("Goal list is empty, beginning cleanup..");
+
+            // Inital values
             awaiting_center = false;
             sortingdone = false;
 
+            // Clear vectors
             goal_vec_top.clear();
             goal_vec_bot.clear();
             goal_vec.clear();
@@ -610,19 +628,18 @@ private:
             
     
         }else if(_poly.polygon.points.empty()){
-            //first control point, so initialize header of boundary polygon
+            // First control point, so initialize header of boundary polygon
             _poly.header = point->header;
             _poly.polygon.points.push_back(costmap_2d::toPoint32(point->point));
             ROS_INFO("Header initialized and first point added to the database");
 
         }else if(_poly.header.frame_id != point->header.frame_id){
+            // Check if frame is mismatched from PolygonStamped to Point
             ROS_ERROR("Frame mismatch, restarting polygon selection");
             _poly.polygon.points.clear();
 
         }else if(_poly.polygon.points.size() > 1 && pointsNearby(_poly.polygon.points.front(), point->point, average_distance*0.1)){
-        
             //Check if the last point is nearby to the first point of the polygon
-            
             if(_poly.polygon.points.size() < 3){
                 ROS_ERROR("Not a valid polygon, restarting");
                 _poly.polygon.points.clear();
@@ -633,16 +650,13 @@ private:
             }
 
         }else{
-
-            //otherwise, it must be a regular point inside boundary polygon
-            //push_back point to a vector (can be used later on..)
+            // Otherwise, it must be a regular point inside boundary polygon
             _poly.polygon.points.push_back(costmap_2d::toPoint32(point->point));
             _poly.header.stamp = ros::Time::now();
             ROS_INFO("Point added to the database");
         }
-        //send_goal();
     }
-        // // // Do not delete
+        // Function to print out robot pose (Mainly for testing puposes - was initially meant to be integrated into goal rotations)
         void boundingBox(const geometry_msgs::PoseWithCovarianceStampedConstPtr &msg)
         {
             qX = msg->pose.pose.position.x; // Robot X position
@@ -690,8 +704,10 @@ public:
         //boundingbox_pub = _n.advertise<visualization_msgs::Marker>("bounding_box", 10);
 
         ROS_INFO("Please stand by, while the client initializes..");
+
         //Sleep needed for the initialization of SoundClient
         ros::Duration(2).sleep();
+        
         ROS_INFO("Client initialized!");
 
         DeminerClient::playSound(0,_sc);
