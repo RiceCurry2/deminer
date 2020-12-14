@@ -16,17 +16,14 @@ alt="ROS: Goal definition " width="350" height="200" border="10" /></a>
 
 ## TODO:
 
-* move_goal -> Actionclient and Actionserver.
-
-* A rough plan is in the works regarding this matter
-
 * Splitting the client up into client and server (currently resides as a client only).
-
-* Cleaning up the code, massive clean up of unused function and maybe adding pointers and/or references to speed up runtime.
 
 
 ## Further implementation:
 * Add implementation of metal_detector
+
+* create_mine.cpp has been added (dependent on RestrictAreaPlugin)
+  This might become the deminer_server
 
 
 
