@@ -27,11 +27,6 @@ find_package(Boost REQUIRED)
 find_package(PCL REQUIRED COMPONENTS common)
 
 
-## Generate messages in the 'msg' folder
-#add_message_files(
-#  FILES
-#  Deminer.msg
-#)
 
 ## Generate services in the 'srv' folder
 #add_service_files(
@@ -39,11 +34,33 @@ find_package(PCL REQUIRED COMPONENTS common)
 #GetNextTask.srv
 #)
 
-## Generate actions in the 'action' folder
-#add_action_files(
-#FILES 
-#DeminerTask.action
-#)
+# add_action_files(
+#   FILES
+#   DeminerTask.action
+# )
+
+# ## Generate actions in the 'action' folder
+# add_action_files(
+# FILES 
+# DeminerTask.action
+# )
+
+## Generate messages in the 'msg' folder
+# add_message_files(
+#   FILES
+#   DeminerTaskAction.msg
+#   DeminerTaskActionFeedback.msg
+#   DeminerTaskActionGoal.msg
+#   DeminerTaskActionResult.msg
+#   DeminerTaskFeedback.msg
+#   DeminerTaskGoal.msg
+#   DeminerTaskResult.msg
+# )
+
+# generate_messages(
+#    DEPENDENCIES
+#    actionlib_msgs
+# )
 
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
@@ -74,6 +91,12 @@ find_package(PCL REQUIRED COMPONENTS common)
 #   cfg/DynReconf1.cfg
 #   cfg/DynReconf2.cfg
 # )
+
+# Messages for actionserver
+#  find_package(catkin REQUIRED genmsg actionlib_msgs actionlib)
+# add_action_files(DIRECTORY action FILES DeminerTask.action)
+# generate_messages(DEPENDENCIES actionlib_msgs)
+
 
 ###################################
 ## catkin specific configuration ##
@@ -110,13 +133,13 @@ include_directories(
   ${PCL_INCLUDE_DIRS}
 )
 
-#add_executable(deminer_server src/deminer_server.cpp)
-#target_link_libraries(deminer_server ${catkin_LIBRARIES})
-#add_dependencies(deminer_server ${PROJECT_NAME}_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+# add_executable(deminer_server src/deminer_server.cpp)
+# target_link_libraries(deminer_server ${catkin_LIBRARIES})
+# #add_dependencies(deminer_server ${PROJECT_NAME}_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 add_executable(deminer_client src/deminer_client.cpp)
 target_link_libraries(deminer_client ${catkin_LIBRARIES})
-# add_dependencies(deminer_client ${PROJECT_NAME}_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
+#add_dependencies(deminer_client ${PROJECT_NAME}_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 add_executable(click src/click.cpp)
 target_link_libraries(click ${catkin_LIBRARIES})

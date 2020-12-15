@@ -6,7 +6,7 @@
 #include <costmap_2d/footprint.h>
 #include <move_base_msgs/MoveBaseAction.h>
 #include <actionlib/client/simple_action_client.h>
-#include <actionlib/server/simple_action_server.h>
+#include <actionlib/server/simple_action_server.h> // To Server
 
 #include "geometry_msgs/PointStamped.h" //Maybe not used
 #include "geometry_msgs/PolygonStamped.h"
@@ -707,7 +707,7 @@ public:
 
         //Sleep needed for the initialization of SoundClient
         ros::Duration(2).sleep();
-        
+
         ROS_INFO("Client initialized!");
 
         DeminerClient::playSound(0,_sc);

@@ -1,16 +1,20 @@
+// This was not finished due to a constrain of time, but the purpose of this node was to divide the software into a client node and a server node
+
 #include "ros/ros.h"
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PointStamped.h> // For testing
 #include <geometry_msgs/PolygonStamped.h> // For testing
 
+#include <move_base_msgs/MoveBaseAction.h>
+#include <actionlib/server/simple_action_server.h>
+
 #include <visualization_msgs/Marker.h>
 #include <ros/console.h>
 #include <pluginlib/class_list_macros.h>
 
+namespace deminer {
 
-namespace create_mine {
-
-    class Flag
+    class DeminerServer
     {
     private:
 	ros::NodeHandle n_;
@@ -22,12 +26,12 @@ namespace create_mine {
     geometry_msgs::PolygonStamped _poly;
     geometry_msgs::Point point_;
     geometry_msgs::Point settings_;
+
+    // Actionlib "move_base" definitons 
+    actionlib::SimpleActionServer<move_base_msgs::MoveBaseAction> mb_server;
+    move_base_msgs::MoveBaseGoal goal;
 	
 	bool operation_;
-    bool remove_all_;
-    bool size_property_;
-    float mine_size_;
-
 
     struct s_mine
     {
@@ -130,28 +134,41 @@ namespace create_mine {
         return;
         }     
     }
-            
-    public:
-    Flag() :
-    n_(),
-    operation_(true)
+
+    void execute(const move_base_msgs::MoveBaseGoalConstPtr& goal)
     {
 
+    std::cout << "goal was successful" << std::endl;
+
+    mb_server.setSucceeded();
+    }
+
+            
+    public:
+    DeminerServer() :
+    n_(),
+    operation_(true),
+    mb_server(n_, "DeminerServer", boost::bind(&DeminerServer::execute, this, _1), false)
+    {
     pub_point = n_.advertise<geometry_msgs::Point>("/detected_mine",10);
     pub_settings = n_.advertise<geometry_msgs::Point>("/restrict_settings",10);
     pub_markers = n_.advertise<visualization_msgs::Marker>("mine_markers", 10);
-    sub_mine = n_.subscribe("/clicked_point",1, &Flag::publishMine, this);
+    sub_mine = n_.subscribe("/clicked_point",1, &DeminerServer::publishMine, this);
+
+
+    mb_server.start();
     }
     
-    ~Flag() {}
+    ~DeminerServer() {}
     };
 }
 
+
 int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "create_mine");
+    ros::init(argc, argv, "deminer_server");
 
-    create_mine::Flag flagger;
+    deminer::DeminerServer server;
 
     std::cout << "create mine interface" << std::endl;
 
@@ -159,3 +176,5 @@ int main(int argc, char** argv)
     
     return 0;
 }
+
+
