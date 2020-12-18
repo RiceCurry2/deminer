@@ -67,7 +67,7 @@ private:
     ros::WallTimer goal_timer;
 
     // Defining the path to sound strings (used in PlaySound method)
-    std::string path_to_sounds = "../catkin_ws/src/deminer/sounds/";
+    std::string path_to_sounds = "../catkin_a/src/deminer/sounds/";
 
     // Defining (client side) variables
     bool awaiting_center;

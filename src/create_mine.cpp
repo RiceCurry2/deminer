@@ -2,10 +2,14 @@
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PointStamped.h> // For testing
 #include <geometry_msgs/PolygonStamped.h> // For testing
+#include "geometry_msgs/PoseWithCovarianceStamped.h"
+#include "std_msgs/Int8.h"
 
 #include <visualization_msgs/Marker.h>
 #include <ros/console.h>
 #include <pluginlib/class_list_macros.h>
+
+#include <stdint.h>
 
 
 namespace create_mine {
@@ -18,6 +22,8 @@ namespace create_mine {
 	ros::Publisher pub_settings;
     ros::Publisher pub_markers;
     ros::Subscriber sub_mine;
+    ros::Subscriber amcl_pose_sub;
+    ros::Subscriber sensorAndSafetyCircuit; 
 
     geometry_msgs::PolygonStamped _poly;
     geometry_msgs::Point point_;
@@ -27,6 +33,8 @@ namespace create_mine {
     bool remove_all_;
     bool size_property_;
     float mine_size_;
+    float qX;
+    float qY;
 
 
     struct s_mine
@@ -86,11 +94,29 @@ namespace create_mine {
         return;
         }
 
-    void publishMine(const geometry_msgs::PointStampedConstPtr& point){
+    void getPose(const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg)
+        {
+            qX = msg->pose.pose.position.x; // Robot X position
+            qY = msg->pose.pose.position.y; // Robot Y position
+            
+            std::cout << "X: " << qX << " Y: " << qY << std::endl;
 
+            return;
+        }
+
+    void publishMine(std_msgs::Int8 data){
+
+            int operation;
+
+            operation = data.data;
+
+            if (operation == 0){
+            ros::spinOnce;
+            }else
+            {
             ros::Rate publish_rate(20);
 
-            if (operation_){
+            std_msgs::Int8 operation;
 
             operation_=false;
 
@@ -100,17 +126,20 @@ namespace create_mine {
 
             s_mine m; 
 
-            m.x = -0.78333;
-            m.y = 2.16096;
-            m.z = 1;
+            m.x = qX;
+            m.y = qY; 
+
+            // m.yaw = tf::getYaw(msg->pose.pose.orientation); // Robot Yaw (Not used)
+            
+            std::cout << "PublishMine: " << "X: " << m.x << " Y: " << m.y << " Z: " << m.z << std::endl;
 
             minevector.push_back(m);
 
             point_.x = m.x;
             point_.y = m.y;
             point_.z = operation_;
-            pub_settings.publish(settings_);
-            pub_point.publish(point_);
+            //pub_settings.publish(settings_);
+            //pub_point.publish(point_);
 
             publish_rate.sleep();
 
@@ -140,7 +169,9 @@ namespace create_mine {
     pub_point = n_.advertise<geometry_msgs::Point>("/detected_mine",10);
     pub_settings = n_.advertise<geometry_msgs::Point>("/restrict_settings",10);
     pub_markers = n_.advertise<visualization_msgs::Marker>("mine_markers", 10);
-    sub_mine = n_.subscribe("/clicked_point",1, &Flag::publishMine, this);
+    // sub_mine = n_.subscribe("/clicked_point",1, &Flag::publishMine, this); // For testing purposes.
+    amcl_pose_sub = n_.subscribe("amcl_pose", 100, &Flag::getPose, this);
+    sensorAndSafetyCircuit = n_.subscribe("sensorAndSafetyTopic", 100, &Flag::publishMine, this);
     }
     
     ~Flag() {}
