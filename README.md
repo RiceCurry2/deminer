@@ -1,5 +1,5 @@
 # deminer
-This package introduces a polygon selection tool into rVIZ, this tool creates a vector of goals which enforces to make the turtlebot follow a boustrophedon path in the search of landmines. 
+This package introduces a polygon selection tool into rVIZ, this tool creates a vector of goals which enforces to make the turtlebot follow a boustrophedon path in the search of landmines. This includes a 'create_mine' node, which can push mine to a costmap and create a visualization marker based on sensor input.
 
 
 ## PROGRESS:
